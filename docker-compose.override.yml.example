@@ -1,0 +1,26 @@
+# Development Override File
+# Copy this to docker-compose.override.yml for local development
+# This file is automatically loaded by docker-compose
+
+version: '3.8'
+
+services:
+  wordpress:
+    volumes:
+      # Mount local wp-content for development
+      - ./wordpress/wp-content:/var/www/html/wp-content
+    environment:
+      WORDPRESS_DEBUG: "1"
+      XDEBUG_MODE: "debug"
+      XDEBUG_CONFIG: "client_host=host.docker.internal client_port=9003"
+
+  nginx:
+    ports:
+      # Expose additional ports for development
+      - "8080:80"
+      - "8443:443"
+
+  phpmyadmin:
+    # Enable phpMyAdmin in development
+    profiles: []
+
