@@ -24,3 +24,4 @@ services:
     # Enable phpMyAdmin in development
     profiles: []
 
+

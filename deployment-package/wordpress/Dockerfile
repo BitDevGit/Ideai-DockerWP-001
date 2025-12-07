@@ -49,4 +49,3 @@ RUN chown -R www-data:www-data /var/www/html
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD php -r "if (file_exists('/var/www/html/wp-config.php')) { exit(0); } exit(1);"
 
-

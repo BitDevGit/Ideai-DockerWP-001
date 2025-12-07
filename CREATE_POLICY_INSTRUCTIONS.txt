@@ -1,0 +1,87 @@
+# How to Create Lightsail Policy in AWS IAM
+
+## Step-by-Step Instructions:
+
+1. Go to AWS IAM Console:
+   https://console.aws.amazon.com/iam/
+
+2. Click "Policies" in the left menu
+
+3. Click "Create policy" button (top right)
+
+4. Click the "JSON" tab
+
+5. Delete the default JSON and paste the contents from: lightsail-policy.json
+   (Or copy the JSON from below)
+
+6. Click "Next"
+
+7. Name the policy: "LightsailDeploymentPolicy"
+   (Or any name you prefer)
+
+8. Description (optional): "Allows Lightsail instance management for WordPress deployment"
+
+9. Click "Create policy"
+
+10. Go back to "Users" → Find "docker-wp"
+
+11. Click "Add permissions" → "Attach policies directly"
+
+12. Search for "LightsailDeploymentPolicy" (or the name you used)
+
+13. Check the box → Click "Next" → "Add permissions"
+
+## JSON Policy Content:
+
+Copy this entire JSON block:
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lightsail:GetInstances",
+                "lightsail:GetInstance",
+                "lightsail:CreateInstances",
+                "lightsail:DeleteInstance",
+                "lightsail:StartInstance",
+                "lightsail:StopInstance",
+                "lightsail:RebootInstance",
+                "lightsail:GetInstanceAccessDetails",
+                "lightsail:GetInstancePortStates",
+                "lightsail:OpenInstancePublicPorts",
+                "lightsail:CloseInstancePublicPorts",
+                "lightsail:UpdateInstanceMetadataOptions",
+                "lightsail:GetInstanceSnapshots",
+                "lightsail:CreateInstanceSnapshot",
+                "lightsail:GetRegions",
+                "lightsail:GetBlueprints",
+                "lightsail:GetBundles",
+                "lightsail:GetDomains",
+                "lightsail:GetDomain",
+                "lightsail:CreateDomain",
+                "lightsail:DeleteDomain",
+                "lightsail:GetLoadBalancers",
+                "lightsail:GetLoadBalancer",
+                "lightsail:CreateLoadBalancer",
+                "lightsail:GetDistributions",
+                "lightsail:GetDistribution"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+
+## Alternative: Search for Existing Policy
+
+Sometimes AWS policies have different names. Try searching for:
+- "Lightsail" (without "Amazon" prefix)
+- "lightsail" (lowercase)
+- Check if there's a "PowerUserAccess" or similar that includes Lightsail
+
+## After Creating Policy:
+
+1. Wait 1-2 minutes
+2. Test with: aws lightsail get-instances --region us-east-1
+3. If successful, run: ./scripts/deploy-with-cli.sh

@@ -63,4 +63,3 @@ if [ -n "$AWS_S3_BACKUP_BUCKET" ]; then
     echo -e "${GREEN}Backup uploaded to S3${NC}"
 fi
 
-

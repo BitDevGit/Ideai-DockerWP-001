@@ -39,4 +39,3 @@ define( 'BLOG_ID_CURRENT_SITE', 1 );\\
     echo "Please complete the network setup via WordPress admin."
 fi
 
-

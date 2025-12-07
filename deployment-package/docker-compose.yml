@@ -1,0 +1,116 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: wp-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - wp_data:/var/www/html:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - wordpress
+    restart: unless-stopped
+    networks:
+      - wp-network
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+
+  wordpress:
+    build:
+      context: ./wordpress
+      dockerfile: Dockerfile
+    container_name: wp-wordpress
+    volumes:
+      - wp_data:/var/www/html
+      - ./wordpress/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+      - ./wordpress/php.ini:/usr/local/etc/php/php.ini:ro
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: ${DB_USER:-wordpress}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME:-wordpress}
+      WORDPRESS_TABLE_PREFIX: ${TABLE_PREFIX:-wp_}
+      WORDPRESS_DEBUG: ${WP_DEBUG:-0}
+      WORDPRESS_MULTISITE: "1"
+      WORDPRESS_SUBDOMAIN_INSTALL: ${SUBDOMAIN_INSTALL:-1}
+      WORDPRESS_DOMAIN_CURRENT_SITE: ${DOMAIN_CURRENT_SITE:-localhost}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    networks:
+      - wp-network
+
+  db:
+    image: mysql:8.0
+    container_name: wp-db
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-wordpress}
+      MYSQL_USER: ${DB_USER:-wordpress}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_INNODB_BUFFER_POOL_SIZE: 1G
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=1G --max-connections=200
+    restart: unless-stopped
+    networks:
+      - wp-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: wp-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - wp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: wp-phpmyadmin
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${DB_USER:-wordpress}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - wp-network
+    profiles:
+      - tools
+
+volumes:
+  wp_data:
+    driver: local
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  wp-network:
+    driver: bridge
+

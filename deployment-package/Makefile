@@ -78,4 +78,3 @@ deploy: ## Deploy to AWS Lightsail
 setup-cdn: ## Set up CloudFront CDN
 	./scripts/setup-cloudfront.sh
 
-

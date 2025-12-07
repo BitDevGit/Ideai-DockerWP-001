@@ -1,0 +1,39 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "lightsail:GetInstances",
+                "lightsail:GetInstance",
+                "lightsail:CreateInstances",
+                "lightsail:DeleteInstance",
+                "lightsail:StartInstance",
+                "lightsail:StopInstance",
+                "lightsail:RebootInstance",
+                "lightsail:GetInstanceAccessDetails",
+                "lightsail:GetInstancePortStates",
+                "lightsail:OpenInstancePublicPorts",
+                "lightsail:CloseInstancePublicPorts",
+                "lightsail:UpdateInstanceMetadataOptions",
+                "lightsail:GetInstanceSnapshots",
+                "lightsail:CreateInstanceSnapshot",
+                "lightsail:GetRegions",
+                "lightsail:GetBlueprints",
+                "lightsail:GetBundles",
+                "lightsail:GetInstanceSnapshots",
+                "lightsail:GetDomains",
+                "lightsail:GetDomain",
+                "lightsail:CreateDomain",
+                "lightsail:DeleteDomain",
+                "lightsail:GetLoadBalancers",
+                "lightsail:GetLoadBalancer",
+                "lightsail:CreateLoadBalancer",
+                "lightsail:GetDistributions",
+                "lightsail:GetDistribution"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+
