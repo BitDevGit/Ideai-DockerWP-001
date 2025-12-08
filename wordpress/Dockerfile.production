@@ -1,0 +1,60 @@
+FROM wordpress:6.4-php8.2-fpm
+
+# Install additional PHP extensions and tools
+RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    zip \
+    unzip \
+    git \
+    curl \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libicu-dev \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+    gd \
+    zip \
+    intl \
+    mbstring \
+    opcache \
+    mysqli \
+    pdo \
+    pdo_mysql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy custom PHP configurations
+COPY php.ini /usr/local/etc/php/php.ini
+COPY uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
+# Copy WordPress multisite configuration script
+COPY configure-multisite.sh /usr/local/bin/configure-multisite.sh
+RUN chmod +x /usr/local/bin/configure-multisite.sh
+
+# Copy wp-content into image
+# This can be overridden with build arg for different sources
+ARG WP_CONTENT_SOURCE=../wp-content
+COPY ${WP_CONTENT_SOURCE}/plugins/ /var/www/html/wp-content/plugins/
+COPY ${WP_CONTENT_SOURCE}/themes/ /var/www/html/wp-content/themes/
+
+# Create uploads directory (but don't copy - use volume in production)
+RUN mkdir -p /var/www/html/wp-content/uploads && \
+    chmod 755 /var/www/html/wp-content/uploads
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www/html/wp-content && \
+    find /var/www/html/wp-content -type d -exec chmod 755 {} \; && \
+    find /var/www/html/wp-content -type f -exec chmod 644 {} \;
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD php -r "if (file_exists('/var/www/html/wp-config.php')) { exit(0); } exit(1);"
+

@@ -1,0 +1,19 @@
+# Docker Compose Override for Local Development
+# This file is automatically used by docker-compose for local development
+# It mounts wp-content as a volume for instant changes without rebuilds
+
+services:
+  wordpress:
+    volumes:
+      # Mount wp-content for live development (plugins, themes)
+      - ./wp-content:/var/www/html/wp-content
+      # Exclude uploads from mount - use separate volume to avoid conflicts
+      - wp_uploads:/var/www/html/wp-content/uploads
+    environment:
+      - WP_CONTENT_DIR=/var/www/html/wp-content
+      - WP_DEBUG=${WP_DEBUG:-1}
+
+volumes:
+  wp_uploads:
+    driver: local
+
