@@ -65,3 +65,4 @@ docker-compose exec -T wordpress chown -R www-data:www-data /var/www/html
 echo -e "${GREEN}Files restored.${NC}"
 echo -e "${GREEN}Restore completed successfully!${NC}"
 
+

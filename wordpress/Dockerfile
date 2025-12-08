@@ -28,8 +28,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Composer not needed for basic WordPress - can install later if needed
 
 # Set working directory
 WORKDIR /var/www/html

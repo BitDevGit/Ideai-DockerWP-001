@@ -106,3 +106,4 @@ rm -f deployment.tar.gz
 echo -e "${GREEN}Deployment completed!${NC}"
 echo -e "${GREEN}Your WordPress multisite is available at: https://$INSTANCE_IP${NC}"
 
+

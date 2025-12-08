@@ -84,3 +84,4 @@ echo -e "1. Update your DNS to point $CDN_DOMAIN to the CloudFront distribution"
 echo -e "2. Update WordPress settings to use $CDN_DOMAIN for static assets"
 echo -e "3. Configure SSL certificate for $CDN_DOMAIN in CloudFront"
 
+

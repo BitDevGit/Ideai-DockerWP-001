@@ -52,3 +52,4 @@ echo -e "${GREEN}SSL certificate setup completed!${NC}"
 echo -e "${YELLOW}Note: Certificates expire in 90 days. Set up auto-renewal:${NC}"
 echo -e "Add to crontab: 0 0 * * * certbot renew --quiet && docker-compose restart nginx"
 
+

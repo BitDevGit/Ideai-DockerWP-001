@@ -73,3 +73,4 @@ echo "1. Upload deployment-package.tar.gz to your Lightsail instance"
 echo "2. Extract: tar -xzf deployment-package.tar.gz"
 echo "3. Follow instructions in DEPLOY_INSTRUCTIONS.txt"
 
+

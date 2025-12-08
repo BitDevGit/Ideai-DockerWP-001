@@ -28,8 +28,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Composer not needed for basic WordPress - can install later if needed
 
 # Set working directory
 WORKDIR /var/www/html
@@ -48,4 +47,5 @@ RUN chown -R www-data:www-data /var/www/html
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD php -r "if (file_exists('/var/www/html/wp-config.php')) { exit(0); } exit(1);"
+
 
