@@ -1,24 +1,10 @@
-# IAM Permissions Needed for Lightsail Deployment
+# IAM Permissions for Lightsail Deployment
 
-## Current Issue
-Your IAM user `docker-wp` needs Lightsail permissions to deploy automatically.
+Required AWS IAM permissions for deploying to Lightsail.
 
-## Quick Fix - Option 1: Attach Full Lightsail Policy (Easiest)
+## Policy Definition
 
-1. Go to AWS IAM Console: https://console.aws.amazon.com/iam/
-2. Click **Users** → Find `docker-wp`
-3. Click **Add permissions** → **Attach policies directly**
-4. Search for: `AmazonLightsailFullAccess`
-5. Check the box and click **Next** → **Add permissions**
-
-This gives full Lightsail access (create, read, update, delete instances).
-
-## Option 2: Custom Policy (More Secure - Recommended)
-
-Create a custom policy with only what's needed:
-
-1. Go to IAM → **Policies** → **Create policy**
-2. Click **JSON** tab and paste:
+The policy is defined in `lightsail-policy.json`:
 
 ```json
 {
@@ -43,7 +29,16 @@ Create a custom policy with only what's needed:
                 "lightsail:CreateInstanceSnapshot",
                 "lightsail:GetRegions",
                 "lightsail:GetBlueprints",
-                "lightsail:GetBundles"
+                "lightsail:GetBundles",
+                "lightsail:GetDomains",
+                "lightsail:GetDomain",
+                "lightsail:CreateDomain",
+                "lightsail:DeleteDomain",
+                "lightsail:GetLoadBalancers",
+                "lightsail:GetLoadBalancer",
+                "lightsail:CreateLoadBalancer",
+                "lightsail:GetDistributions",
+                "lightsail:GetDistribution"
             ],
             "Resource": "*"
         }
@@ -51,38 +46,90 @@ Create a custom policy with only what's needed:
 }
 ```
 
-3. Name it: `LightsailDeploymentPolicy`
-4. Click **Create policy**
-5. Go back to **Users** → `docker-wp` → **Add permissions** → **Attach policies directly**
-6. Search for `LightsailDeploymentPolicy` and attach it
+## Creating the Policy
 
-## Minimum Permissions Needed for Deployment Script
+### Using AWS CLI
 
-The deployment script needs:
-- `lightsail:GetInstances` - List instances
-- `lightsail:GetInstance` - Get instance details (IP address)
-- `lightsail:GetInstanceAccessDetails` - Get SSH connection info
+```bash
+aws iam create-policy \
+  --policy-name LightsailDeploymentPolicy \
+  --policy-document file://lightsail-policy.json \
+  --description "Permissions for WordPress Lightsail deployment"
+```
 
-For creating instances (if needed):
-- `lightsail:CreateInstances` - Create new instance
-- `lightsail:GetBlueprints` - List available OS images
-- `lightsail:GetBundles` - List instance sizes
+### Using AWS Console
 
-## After Adding Permissions
+1. Go to IAM → Policies
+2. Click "Create policy"
+3. Select JSON tab
+4. Paste policy from `lightsail-policy.json`
+5. Name: `LightsailDeploymentPolicy`
+6. Create policy
 
-1. Wait 1-2 minutes for permissions to propagate
-2. Test access:
-   ```bash
-   aws lightsail get-instances --region us-east-1
-   ```
-3. If successful, run deployment:
-   ```bash
-   ./scripts/deploy-lightsail.sh
-   ```
+## Attaching to User
 
-## Alternative: Use AWS Console
+### Using AWS CLI
 
-If you prefer not to modify IAM, you can:
-1. Create Lightsail instance manually in AWS Console
-2. Use the manual deployment steps in `DEPLOY_TO_LIGHTSAIL.md`
+```bash
+# Get your account ID
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
+# Attach policy to user
+aws iam attach-user-policy \
+  --user-name YOUR_USERNAME \
+  --policy-arn arn:aws:iam::${ACCOUNT_ID}:policy/LightsailDeploymentPolicy
+```
+
+### Using AWS Console
+
+1. Go to IAM → Users
+2. Select your user
+3. Click "Add permissions"
+4. Select "Attach policies directly"
+5. Search for `LightsailDeploymentPolicy`
+6. Attach
+
+## Verifying Permissions
+
+```bash
+# Test permissions
+aws lightsail get-instances --region eu-west-2
+
+# Should return list of instances (or empty array if none)
+```
+
+## Required Permissions Explained
+
+- **GetInstances/GetInstance**: List and view instance details
+- **CreateInstances**: Create new Lightsail instances
+- **StartInstance/StopInstance/RebootInstance**: Control instance state
+- **GetInstanceAccessDetails**: Get SSH access information
+- **GetInstancePortStates**: Check firewall rules
+- **OpenInstancePublicPorts/CloseInstancePublicPorts**: Manage firewall
+- **GetRegions/GetBlueprints/GetBundles**: Get available options
+- **GetDomains/CreateDomain**: Domain management
+- **GetLoadBalancers/CreateLoadBalancer**: Load balancer management
+- **GetDistributions/GetDistribution**: CloudFront distribution access
+
+## Security Best Practices
+
+1. **Principle of Least Privilege**: Only grant necessary permissions
+2. **Use IAM Users**: Don't use root account
+3. **Rotate Credentials**: Regularly rotate access keys
+4. **Monitor Usage**: Check CloudTrail for access logs
+
+## Troubleshooting
+
+### Error: AccessDeniedException
+
+**Solution:**
+- Verify policy is attached
+- Check policy ARN is correct
+- Ensure user has correct permissions
+
+### Error: Policy doesn't exist
+
+**Solution:**
+- Create policy first
+- Verify policy name matches
+- Check region (some services are region-specific)

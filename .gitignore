@@ -1,25 +1,24 @@
-# Environment files
+# Environment
 .env
 .env.local
 .env.*.local
 
-# WordPress
-wordpress/wp-config.php
-wordpress/wp-content/uploads/
-wordpress/wp-content/upgrade/
-wordpress/wp-content/backup-db/
-wordpress/wp-content/advanced-cache.php
-wordpress/wp-content/wp-cache-config.php
-
 # Docker
 *.log
 logs/
-docker-compose.override.yml
+*.pid
+*.seed
+*.pid.lock
 
-# SSL certificates
-nginx/ssl/*.pem
-nginx/ssl/*.key
-nginx/ssl/*.crt
+# Deployment
+deployment-package/
+deployment-package.tar.gz
+*.tar.gz
+
+# Backups
+backups/
+*.sql
+*.sql.gz
 
 # IDE
 .vscode/
@@ -32,13 +31,15 @@ nginx/ssl/*.crt
 .DS_Store
 Thumbs.db
 
-# Backup files
-*.sql
-*.sql.gz
-backups/
+# WordPress
+wp-config.php
+.htaccess
 
-# Temporary files
-tmp/
-temp/
+# SSL
+nginx/ssl/*.pem
+nginx/ssl/*.key
+!nginx/ssl/.gitkeep
 
-
+# Temporary
+*.tmp
+*.temp

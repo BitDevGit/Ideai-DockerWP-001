@@ -1,180 +1,170 @@
-# Quick Guide: Deploy to AWS Lightsail
+# AWS Lightsail Deployment Guide
 
-## Current Status
-- ✅ **Local Setup**: Running at http://localhost
-- ❌ **Lightsail**: Not yet deployed
+Complete guide for deploying WordPress multisite to AWS Lightsail.
 
-## Quick Deployment Steps
+## Prerequisites
 
-### Option 1: Manual Deployment (Recommended for first time)
-
-1. **Create Lightsail Instance**
-   - Go to AWS Lightsail Console: https://lightsail.aws.amazon.com
-   - Click "Create instance"
-   - Choose:
-     - **Platform**: Linux/Unix
-     - **Blueprint**: Ubuntu 22.04 LTS
-     - **Instance Plan**: $10/month (2GB RAM) or higher
-     - **Instance Name**: `wordpress-multisite`
-
-2. **Wait for instance to be running** (2-3 minutes)
-
-3. **Get Instance IP**
-   - In Lightsail console, click on your instance
-   - Copy the "Public IP" address
-
-4. **Connect to Instance**
-   ```bash
-   # Download SSH key from Lightsail console first
-   # Then connect:
-   ssh -i ~/Downloads/wordpress-multisite-key.pem ubuntu@<instance-ip>
-   ```
-
-5. **Install Docker on Instance**
-   ```bash
-   # Update system
-   sudo apt-get update && sudo apt-get upgrade -y
-   
-   # Install Docker
-   curl -fsSL https://get.docker.com -o get-docker.sh
-   sudo sh get-docker.sh
-   sudo usermod -aG docker $USER
-   
-   # Install Docker Compose
-   sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-   sudo chmod +x /usr/local/bin/docker-compose
-   
-   # Install Git
-   sudo apt-get install -y git
-   
-   # Log out and back in
-   exit
-   ```
-
-6. **Deploy Application**
-   ```bash
-   # Connect again
-   ssh -i ~/Downloads/wordpress-multisite-key.pem ubuntu@<instance-ip>
-   
-   # Clone repository (or upload files)
-   cd /opt
-   sudo mkdir -p wordpress-multisite
-   cd wordpress-multisite
-   
-   # If you have a Git repository:
-   sudo git clone <your-repo-url> .
-   sudo chown -R $USER:$USER .
-   
-   # OR upload files manually using SCP:
-   # From your local machine:
-   # scp -i ~/Downloads/wordpress-multisite-key.pem -r * ubuntu@<instance-ip>:/opt/wordpress-multisite/
-   ```
-
-7. **Configure Environment**
-   ```bash
-   cd /opt/wordpress-multisite
-   cp .env.example .env
-   nano .env
-   # Update with:
-   # - Strong passwords
-   # - Your domain name (if you have one)
-   # - Production settings
-   ```
-
-8. **Start Services**
-   ```bash
-   docker-compose up -d
-   docker-compose ps  # Check status
-   ```
-
-9. **Configure Firewall**
-   - In Lightsail console, go to Networking tab
-   - Add firewall rules:
-     - HTTP (port 80) - Allow from Anywhere
-     - HTTPS (port 443) - Allow from Anywhere
-     - SSH (port 22) - Allow from Your IP
-
-10. **Access Your Site**
-    - Open browser: `http://<instance-ip>`
-    - Complete WordPress installation
-
-### Option 2: Using Deployment Script (After initial setup)
-
-Once you have:
+- AWS account with Lightsail access
 - AWS CLI configured
-- Lightsail instance created
-- SSH key set up
+- SSH key for Lightsail instance
+- IAM permissions (see [IAM Permissions](IAM_PERMISSIONS.md))
+
+## Step 1: Create Lightsail Instance
+
+### Option A: Using AWS CLI
 
 ```bash
-# Set environment variables
-export AWS_LIGHTSAIL_INSTANCE_NAME=wordpress-multisite
-export AWS_REGION=us-east-1
-
-# Run deployment script
-./scripts/deploy-lightsail.sh
+./scripts/deployment/create-and-deploy-london.sh
 ```
 
-## Setting Up Domain (Optional)
+### Option B: Manual Creation
 
-1. **Point Domain to Lightsail**
-   - In your domain registrar, create A record:
-     - Type: A
-     - Name: @ (or blank)
-     - Value: <your-lightsail-ip>
-     - TTL: 300
+1. Go to AWS Lightsail Console
+2. Create instance:
+   - **Platform**: Linux/Unix
+   - **Blueprint**: Ubuntu 22.04 LTS
+   - **Bundle**: 1GB RAM minimum (2GB+ recommended)
+   - **Region**: eu-west-2 (London)
+3. Note the instance name and IP address
 
-2. **Set Up SSL Certificate**
-   ```bash
-   # On Lightsail instance
-   sudo apt-get install -y certbot
-   
-   # Stop nginx temporarily
-   docker-compose stop nginx
-   
-   # Generate certificate
-   sudo certbot certonly --standalone -d yourdomain.com -d www.yourdomain.com
-   
-   # Copy certificates
-   sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem nginx/ssl/cert.pem
-   sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem nginx/ssl/key.pem
-   
-   # Switch to production nginx config
-   mv nginx/conf.d/default.conf nginx/conf.d/local.conf
-   mv nginx/conf.d/default.conf.production nginx/conf.d/default.conf
-   
-   # Restart services
-   docker-compose start nginx
-   ```
+## Step 2: Configure IAM Permissions
 
-## Cost Estimate
+Create IAM policy (see `lightsail-policy.json`):
 
-- **Lightsail Instance**: $10/month (2GB RAM) or $20/month (4GB RAM)
-- **Data Transfer**: First 1TB free, then $0.09/GB
-- **Total**: ~$10-20/month for small to medium sites
+```bash
+aws iam create-policy \
+  --policy-name LightsailDeploymentPolicy \
+  --policy-document file://lightsail-policy.json
 
-## Next Steps After Deployment
+# Attach to your user
+aws iam attach-user-policy \
+  --user-name your-username \
+  --policy-arn arn:aws:iam::ACCOUNT_ID:policy/LightsailDeploymentPolicy
+```
 
-1. Complete WordPress installation
-2. Enable multisite network
-3. Set up automated backups
-4. Configure CloudFront CDN (optional)
-5. Set up monitoring
+## Step 3: Prepare Deployment Package
+
+```bash
+./scripts/deployment/prepare-deployment.sh
+```
+
+This creates `deployment-package.tar.gz` with all necessary files.
+
+## Step 4: Deploy to Instance
+
+### Using Deployment Script
+
+```bash
+./scripts/deployment/deploy-to-instance.sh \
+  wordpress-multisite \
+  13.40.170.117 \
+  ubuntu \
+  /path/to/ssh-key.pem
+```
+
+### Manual Deployment
+
+```bash
+# 1. Upload package
+scp -i /path/to/key.pem deployment-package.tar.gz ubuntu@INSTANCE_IP:/tmp/
+
+# 2. SSH to instance
+ssh -i /path/to/key.pem ubuntu@INSTANCE_IP
+
+# 3. Extract and start
+cd /opt/wordpress-multisite
+sudo tar -xzf /tmp/deployment-package.tar.gz
+sudo docker-compose pull
+sudo docker-compose up -d
+```
+
+## Step 5: Configure Environment
+
+On the instance:
+
+```bash
+cd /opt/wordpress-multisite
+nano .env
+```
+
+Update:
+- Database passwords
+- Domain name
+- AWS settings
+
+## Step 6: Verify Deployment
+
+```bash
+# Check containers
+sudo docker-compose ps
+
+# Check logs
+sudo docker-compose logs
+
+# Test site
+curl -I http://INSTANCE_IP
+```
+
+## Step 7: Configure Domain (Optional)
+
+1. Point DNS to Lightsail IP
+2. Update `.env`: `DOMAIN_CURRENT_SITE=yourdomain.com`
+3. Restart: `sudo docker-compose restart`
+
+## Step 8: SSL Certificate
+
+### Using Let's Encrypt
+
+```bash
+# On Lightsail instance
+sudo apt-get update
+sudo apt-get install certbot
+
+# Generate certificate
+sudo certbot certonly --standalone -d yourdomain.com
+
+# Copy to nginx
+sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem nginx/ssl/cert.pem
+sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem nginx/ssl/key.pem
+
+# Restart nginx
+sudo docker-compose restart nginx
+```
+
+## Current Deployment
+
+**Instance**: `wordpress-multisite`  
+**Region**: eu-west-2 (London)  
+**IP**: `13.40.170.117`  
+**Status**: ✅ Running
+
+### Container Status
+- nginx: Port 80
+- wordpress: PHP-FPM
+- db: MariaDB 10.11
 
 ## Troubleshooting
 
-### Can't connect via SSH
-- Check firewall rules in Lightsail
-- Verify SSH key permissions: `chmod 400 ~/Downloads/wordpress-multisite-key.pem`
-- Check instance status in Lightsail console
+### SSH Timeout
 
-### Services won't start
-- Check logs: `docker-compose logs`
-- Verify .env file is configured correctly
-- Check disk space: `df -h`
+Use browser SSH from Lightsail console instead of terminal.
 
-### Can't access website
-- Verify firewall rules allow HTTP/HTTPS
-- Check nginx logs: `docker-compose logs nginx`
-- Test from instance: `curl http://localhost`
+### IP Address Changed
 
+After restart, IP may change. Get current IP:
+```bash
+aws lightsail get-instance \
+  --instance-name wordpress-multisite \
+  --region eu-west-2 \
+  --query 'instance.publicIpAddress'
+```
 
+### Database Connection Issues
+
+See [Troubleshooting Guide](../troubleshooting/TROUBLESHOOTING.md).
+
+## Next Steps
+
+- [Scaling Guide](../architecture/SCALING.md) - Scale your deployment
+- [CloudFront Setup](CLOUDFRONT.md) - Add CDN
+- [Backup Guide](../maintenance/BACKUP.md) - Set up backups
