@@ -35,6 +35,20 @@ Thumbs.db
 wp-config.php
 .htaccess
 
+# wp-content uploads (user-generated content)
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/backups/
+wp-content/cache/
+wp-content/blogs.dir/
+wp-content/upgrade/
+
+# Keep wp-content structure but ignore uploads
+!wp-content/.gitkeep
+!wp-content/plugins/.gitkeep
+!wp-content/themes/.gitkeep
+
 # SSL
 nginx/ssl/*.pem
 nginx/ssl/*.key

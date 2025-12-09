@@ -24,6 +24,7 @@ docker-compose up -d
 
 - ✅ **WordPress Multisite** - Fully configured for subdomain or subdirectory installations
 - ✅ **Docker Compose** - Multi-container setup with WordPress, MariaDB, and Nginx
+- ✅ **Shared wp-content** - Reusable plugins/themes across projects (local volume mount + production image)
 - ✅ **Security Hardened** - SSL/TLS, security headers, rate limiting
 - ✅ **Performance Optimized** - OPcache, Gzip compression, static file caching
 - ✅ **AWS Lightsail Ready** - Automated deployment scripts
@@ -104,11 +105,29 @@ docker-compose up -d
 - **[Quick Start Guide](docs/deployment/QUICKSTART.md)** - Get started in 5 minutes
 - **[Deployment Guide](docs/deployment/DEPLOYMENT.md)** - Full deployment instructions
 - **[AWS Lightsail Deployment](docs/deployment/LIGHTSAIL.md)** - Step-by-step Lightsail setup
+- **[WP Content Workflow](docs/deployment/WP_CONTENT_WORKFLOW.md)** - Working with plugins/themes
 - **[Troubleshooting](docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Scaling Guide](docs/architecture/SCALING.md)** - Scaling strategies
 - **[IAM Permissions](docs/deployment/IAM_PERMISSIONS.md)** - Required AWS permissions
 
 ## 🛠️ Development
+
+### WordPress Content Setup
+
+```bash
+# Setup wp-content for local development
+./scripts/dev/setup-wp-content.sh
+
+# Or symlink to shared repository
+./scripts/dev/setup-wp-content.sh /path/to/wp-content-repo
+```
+
+**Local Development:**
+- wp-content is volume mounted (instant changes)
+- No rebuilds needed during development
+- Uploads use separate Docker volume
+
+See [WP Content Workflow](docs/deployment/WP_CONTENT_WORKFLOW.md) for details.
 
 ### Make Commands
 
