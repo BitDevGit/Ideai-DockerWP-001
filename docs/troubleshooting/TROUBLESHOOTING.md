@@ -188,3 +188,4 @@ docker-compose exec nginx tail -f /var/log/nginx/access.log
 3. Check [Architecture Docs](../architecture/SCALING.md)
 4. Open an issue on GitHub
 
+

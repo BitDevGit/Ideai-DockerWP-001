@@ -118,3 +118,4 @@ foreach ($usermeta as $meta) {
 
 echo "\n✓ Migration complete! Updated $updated records.\n";
 
+

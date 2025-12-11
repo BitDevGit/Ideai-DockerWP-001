@@ -132,3 +132,4 @@ For issues or questions:
 3. Check logs: `docker-compose logs`
 4. Open an issue on GitHub
 
+

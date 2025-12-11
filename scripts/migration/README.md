@@ -139,3 +139,4 @@ docker-compose exec wordpress wp eval-file scripts/migration/migrate-serialized-
 4. **Clear cache**: Clear all caches after migration
 5. **Check serialized**: Use PHP script for complex serialized data
 
+

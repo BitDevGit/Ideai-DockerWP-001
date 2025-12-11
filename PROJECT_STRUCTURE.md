@@ -143,3 +143,4 @@ When adding new files:
 3. Update this file if structure changes
 4. Add to `.gitignore` if sensitive
 
+

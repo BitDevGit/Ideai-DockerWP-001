@@ -68,3 +68,4 @@ echo ""
 echo "Note: Uploads will still use Docker volume (wp_uploads)"
 echo "      to avoid conflicts with the symlinked directory"
 
+

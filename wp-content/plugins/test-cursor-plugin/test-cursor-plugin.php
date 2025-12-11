@@ -62,3 +62,4 @@ function test_cursor_plugin_activate() {
     error_log('Test Cursor Plugin activated at ' . date('Y-m-d H:i:s'));
 }
 
+

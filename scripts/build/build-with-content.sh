@@ -88,3 +88,4 @@ echo "To use this image, update docker-compose.yml:"
 echo "  wordpress:"
 echo "    image: ${IMAGE_NAME}:${IMAGE_TAG}"
 
+

@@ -69,3 +69,4 @@ When migrating from local to AWS:
 - Both use same wp-content structure
 - Database migration handles URL rewrites automatically
 
+
