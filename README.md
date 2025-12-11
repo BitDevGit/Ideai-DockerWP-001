@@ -5,112 +5,165 @@ A production-ready, secure, and performant WordPress multisite setup using Docke
 ## 🚀 Quick Start
 
 ```bash
-# 1. Clone and configure
-git clone <your-repo-url>
-cd Ideai-DockerWP-001
-cp .env.example .env
-# Edit .env with your settings
+# 1. Start Docker Desktop
+open -a Docker  # macOS
+# Wait for Docker to be running
 
-# 2. Start locally
-make up
-# or
+# 2. Start services
 docker-compose up -d
 
 # 3. Access WordPress
 # http://localhost
 ```
 
+**First time setup:**
+1. Visit http://localhost
+2. Complete WordPress installation
+3. Log in at http://localhost/wp-admin
+
 ## ✨ Features
 
 - ✅ **WordPress Multisite** - Fully configured for subdomain or subdirectory installations
-- ✅ **Docker Compose** - Multi-container setup with WordPress, MariaDB, and Nginx
-- ✅ **Shared wp-content** - Reusable plugins/themes across projects (local volume mount + production image)
-- ✅ **Security Hardened** - SSL/TLS, security headers, rate limiting
+- ✅ **Docker Compose** - Multi-container setup (Nginx, WordPress FPM, MariaDB)
+- ✅ **Local Development** - Volume mounts for instant theme/plugin changes
+- ✅ **Production Builds** - Docker images with wp-content included
+- ✅ **Security Hardened** - SSL/TLS ready, security headers, rate limiting
 - ✅ **Performance Optimized** - OPcache, Gzip compression, static file caching
 - ✅ **AWS Lightsail Ready** - Automated deployment scripts
-- ✅ **CDN Support** - CloudFront integration scripts
-- ✅ **CI/CD Pipeline** - GitHub Actions for automated deployment
-- ✅ **Backup & Restore** - Automated backup scripts
-- ✅ **Scalable Architecture** - Designed for horizontal scaling
+- ✅ **Test Theme/Plugin** - Included for verification
 
-## 📋 Current Deployment Status
+## 📋 Current Status
 
-**Instance**: `wordpress-multisite` (London - eu-west-2)  
-**IP**: `13.40.170.117`  
-**Status**: ✅ All containers running  
-**URL**: http://13.40.170.117
+**Local:** ✅ Running at http://localhost  
+**AWS:** ✅ Instance `wordpress-multisite` (London - eu-west-2) at http://13.40.170.117
 
 ### Container Status
-- ✅ **nginx**: Running (port 80)
-- ✅ **wordpress**: Running (PHP-FPM)
-- ✅ **db**: Running (MariaDB 10.11 - healthy)
+- ✅ **nginx**: Web server (port 80)
+- ✅ **wordpress**: PHP-FPM application (port 9000)
+- ✅ **db**: MariaDB database (port 3306)
 
 ## 📁 Project Structure
 
 ```
 .
-├── README.md                      # This file - main documentation
-├── docker-compose.yml             # Main Docker Compose configuration
-├── .env.example                   # Environment variables template
-├── Makefile                       # Common development commands
+├── README.md                      # This file
+├── QUICK_START.md                 # Quick start guide
+├── DOCKER_WALKTHROUGH.md          # Detailed Docker architecture
+├── STATUS.md                      # Current project status
+├── TESTING_GUIDE.md               # Testing theme/plugin/migration
+├── URLS.md                        # Quick URL reference
+│
+├── docker-compose.yml             # Main Docker Compose config
+├── docker-compose.override.yml    # Local dev overrides (volume mounts)
+├── .env                           # Environment variables (create from .env.example)
 │
 ├── docs/                          # Documentation
 │   ├── deployment/                # Deployment guides
-│   ├── troubleshooting/          # Troubleshooting guides
-│   └── architecture/              # Architecture documentation
+│   │   ├── QUICKSTART.md          # Quick deployment guide
+│   │   ├── DEPLOYMENT.md          # Full deployment guide
+│   │   ├── LIGHTSAIL.md          # AWS Lightsail setup
+│   │   ├── IAM_PERMISSIONS.md     # AWS IAM permissions
+│   │   └── WP_CONTENT_WORKFLOW.md # wp-content workflow
+│   ├── architecture/              # Architecture docs
+│   │   ├── SCALING.md             # Scaling strategies
+│   │   ├── WP_CONTENT_STRATEGY.md # wp-content strategy
+│   │   └── WP_CONTENT_IMPLEMENTATION.md # wp-content implementation
+│   └── troubleshooting/           # Troubleshooting
+│       └── TROUBLESHOOTING.md     # Common issues
 │
 ├── nginx/                         # Nginx configuration
 │   ├── nginx.conf                 # Main Nginx config
 │   └── conf.d/
-│       └── default.conf           # Site configuration
+│       ├── default.conf           # Local development config
+│       └── default.conf.production # Production config
 │
 ├── wordpress/                     # WordPress configuration
-│   ├── Dockerfile                 # Custom WordPress image (optional)
+│   ├── Dockerfile                 # Base WordPress image
+│   ├── Dockerfile.production      # Production build with wp-content
 │   ├── php.ini                    # PHP configuration
-│   ├── uploads.ini                # Upload settings
-│   └── configure-multisite.sh     # Multisite setup script
+│   └── uploads.ini                # Upload settings
 │
-├── scripts/                       # Automation scripts
-│   ├── deployment/                # Deployment scripts
-│   ├── maintenance/               # Maintenance scripts
-│   └── backup/                    # Backup/restore scripts
+├── wp-content/                    # WordPress content (themes, plugins)
+│   ├── themes/
+│   │   └── test-cursor-theme/     # Test theme with "Hello Cursor!"
+│   ├── plugins/
+│   │   └── test-cursor-plugin/     # Test plugin
+│   └── uploads/                   # User uploads (volume mounted)
 │
-└── .github/
-    └── workflows/
-        └── deploy.yml             # CI/CD pipeline
+└── scripts/                        # Automation scripts
+    ├── build/
+    │   └── build-with-content.sh  # Build production image
+    ├── deployment/                 # Deployment scripts
+    ├── dev/
+    │   ├── setup-wp-content.sh     # Setup wp-content for local dev
+    │   └── explain-docker.sh       # Docker explanation script
+    ├── migration/                  # Database migration
+    │   ├── migrate-db-to-aws.sh   # Domain/URL migration
+    │   └── migrate-serialized-urls.php # Serialized data migration
+    ├── backup/                     # Backup/restore
+    └── maintenance/                # Health checks, SSL
 ```
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────┐
-│  CloudFront │  (CDN - Optional)
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│    Nginx    │  (Reverse Proxy & SSL)
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│  WordPress  │  (PHP-FPM 8.2)
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│   MariaDB   │  (Database 10.11)
-└─────────────┘
+Browser → Nginx (Port 80) → WordPress PHP-FPM (Port 9000) → MariaDB (Port 3306)
+                ↓
+         (Static files served directly)
 ```
+
+**Why this architecture?**
+- **Nginx**: Fast static file serving, reverse proxy
+- **PHP-FPM**: Efficient PHP processing, separate from web server
+- **MariaDB**: Lightweight database, optimized for small instances
+- **Volumes**: Persistent storage for database and uploads
+- **Network**: Isolated Docker network for container communication
+
+See [DOCKER_WALKTHROUGH.md](DOCKER_WALKTHROUGH.md) for detailed explanation.
 
 ## 📚 Documentation
 
-- **[Quick Start Guide](docs/deployment/QUICKSTART.md)** - Get started in 5 minutes
-- **[Deployment Guide](docs/deployment/DEPLOYMENT.md)** - Full deployment instructions
-- **[AWS Lightsail Deployment](docs/deployment/LIGHTSAIL.md)** - Step-by-step Lightsail setup
-- **[WP Content Workflow](docs/deployment/WP_CONTENT_WORKFLOW.md)** - Working with plugins/themes
-- **[Troubleshooting](docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Scaling Guide](docs/architecture/SCALING.md)** - Scaling strategies
-- **[IAM Permissions](docs/deployment/IAM_PERMISSIONS.md)** - Required AWS permissions
+### Quick References
+- **[QUICK_START.md](QUICK_START.md)** - Get started in 5 minutes
+- **[URLS.md](URLS.md)** - Quick URL reference
+- **[STATUS.md](STATUS.md)** - Current project status
+
+### Detailed Guides
+- **[DOCKER_WALKTHROUGH.md](DOCKER_WALKTHROUGH.md)** - Complete Docker architecture walkthrough
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing theme, plugin, and DB migration
+
+### Deployment
+- **[docs/deployment/QUICKSTART.md](docs/deployment/QUICKSTART.md)** - Quick deployment guide
+- **[docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md)** - Full deployment instructions
+- **[docs/deployment/LIGHTSAIL.md](docs/deployment/LIGHTSAIL.md)** - AWS Lightsail setup
+- **[docs/deployment/IAM_PERMISSIONS.md](docs/deployment/IAM_PERMISSIONS.md)** - Required AWS permissions
+- **[docs/deployment/WP_CONTENT_WORKFLOW.md](docs/deployment/WP_CONTENT_WORKFLOW.md)** - wp-content workflow
+
+### Architecture
+- **[docs/architecture/SCALING.md](docs/architecture/SCALING.md)** - Scaling strategies
+- **[docs/architecture/WP_CONTENT_STRATEGY.md](docs/architecture/WP_CONTENT_STRATEGY.md)** - wp-content strategy
+- **[docs/architecture/WP_CONTENT_IMPLEMENTATION.md](docs/architecture/WP_CONTENT_IMPLEMENTATION.md)** - wp-content implementation
+
+### Troubleshooting
+- **[docs/troubleshooting/TROUBLESHOOTING.md](docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## 🛠️ Development
+
+### Local Development
+
+**Start services:**
+```bash
+docker-compose up -d
+```
+
+**Access:**
+- Site: http://localhost
+- Admin: http://localhost/wp-admin
+
+**wp-content:**
+- Volume mounted for instant changes
+- Edit themes/plugins directly in `wp-content/`
+- Changes appear immediately (no rebuild needed)
 
 ### WordPress Content Setup
 
@@ -127,7 +180,7 @@ docker-compose up -d
 - No rebuilds needed during development
 - Uploads use separate Docker volume
 
-See [WP Content Workflow](docs/deployment/WP_CONTENT_WORKFLOW.md) for details.
+See [docs/deployment/WP_CONTENT_WORKFLOW.md](docs/deployment/WP_CONTENT_WORKFLOW.md) for details.
 
 ### Make Commands
 
@@ -161,7 +214,7 @@ docker-compose exec db mysql -u wordpress -p
 ### AWS Lightsail Deployment
 
 ```bash
-# Using deployment script
+# Deploy to existing instance
 ./scripts/deployment/deploy-to-instance.sh \
   wordpress-multisite \
   13.40.170.117 \
@@ -169,37 +222,46 @@ docker-compose exec db mysql -u wordpress -p
   /path/to/ssh-key.pem
 ```
 
-See [Deployment Guide](docs/deployment/DEPLOYMENT.md) for detailed instructions.
+See [docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) for detailed instructions.
+
+### Production Build
+
+```bash
+# Build with wp-content included
+./scripts/build/build-with-content.sh ./wp-content
+```
 
 ## 🔒 Security
 
 - SSL/TLS encryption (TLS 1.2+)
 - Security headers (HSTS, X-Frame-Options, etc.)
-- Rate limiting on Nginx
+- Rate limiting on Nginx (10 req/s)
 - Database password protection
-- Regular security updates recommended
+- File access restrictions
 
 ## 📦 Environment Variables
 
-Key variables (see `.env.example` for full list):
+Create `.env` from `.env.example`:
 
+```bash
+cp .env.example .env
+```
+
+Key variables:
 - `DB_PASSWORD` - Database password
 - `DB_ROOT_PASSWORD` - Database root password
 - `DB_NAME` - Database name (default: wordpress)
 - `DB_USER` - Database user (default: wordpress)
-- `DOMAIN_CURRENT_SITE` - Primary domain for multisite
 - `WP_DEBUG` - Enable WordPress debug mode (0 or 1)
 
 ## 🔄 Backup & Restore
 
 ### Create Backup
-
 ```bash
 ./scripts/backup/backup.sh
 ```
 
 ### Restore from Backup
-
 ```bash
 ./scripts/backup/restore.sh 20240101_120000
 ```
@@ -207,7 +269,6 @@ Key variables (see `.env.example` for full list):
 ## 📈 Monitoring
 
 ### Health Checks
-
 ```bash
 # Check container status
 docker-compose ps
@@ -223,10 +284,9 @@ docker-compose exec db mysqladmin ping -h localhost
 
 ## 🐛 Troubleshooting
 
-See [Troubleshooting Guide](docs/troubleshooting/TROUBLESHOOTING.md) for common issues.
+See [docs/troubleshooting/TROUBLESHOOTING.md](docs/troubleshooting/TROUBLESHOOTING.md) for common issues.
 
-Quick fixes:
-
+**Quick fixes:**
 ```bash
 # Restart services
 docker-compose restart
@@ -237,6 +297,19 @@ docker-compose up -d --build
 # Check logs
 docker-compose logs --tail=50
 ```
+
+## 🧪 Testing
+
+### Test Theme & Plugin
+- Theme: `test-cursor-theme` - Shows "Hello Cursor!" on homepage
+- Plugin: `test-cursor-plugin` - Admin notices and dashboard widget
+
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for complete testing instructions.
+
+### Database Migration
+Scripts for migrating from local to AWS with domain/URL rewrites:
+- `scripts/migration/migrate-db-to-aws.sh`
+- `scripts/migration/migrate-serialized-urls.php`
 
 ## 📝 License
 

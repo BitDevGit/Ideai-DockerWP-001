@@ -48,6 +48,18 @@ The policy is defined in `lightsail-policy.json`:
 
 ## Creating the Policy
 
+### Using AWS Console (Step-by-Step)
+
+1. Go to AWS IAM Console: https://console.aws.amazon.com/iam/
+2. Click "Policies" in the left menu
+3. Click "Create policy" button (top right)
+4. Click the "JSON" tab
+5. Delete the default JSON and paste the contents from `lightsail-policy.json` (or copy from above)
+6. Click "Next"
+7. Name the policy: `LightsailDeploymentPolicy` (or any name you prefer)
+8. Description (optional): "Allows Lightsail instance management for WordPress deployment"
+9. Click "Create policy"
+
 ### Using AWS CLI
 
 ```bash
@@ -56,15 +68,6 @@ aws iam create-policy \
   --policy-document file://lightsail-policy.json \
   --description "Permissions for WordPress Lightsail deployment"
 ```
-
-### Using AWS Console
-
-1. Go to IAM → Policies
-2. Click "Create policy"
-3. Select JSON tab
-4. Paste policy from `lightsail-policy.json`
-5. Name: `LightsailDeploymentPolicy`
-6. Create policy
 
 ## Attaching to User
 
@@ -83,11 +86,12 @@ aws iam attach-user-policy \
 ### Using AWS Console
 
 1. Go to IAM → Users
-2. Select your user
-3. Click "Add permissions"
-4. Select "Attach policies directly"
-5. Search for `LightsailDeploymentPolicy`
-6. Attach
+2. Find your user (e.g., "docker-wp")
+3. Click "Add permissions" → "Attach policies directly"
+4. Search for `LightsailDeploymentPolicy` (or the name you used)
+5. Check the box → Click "Next" → "Add permissions"
+
+**Note:** Wait 1-2 minutes after creating/attaching policy for changes to propagate.
 
 ## Verifying Permissions
 
