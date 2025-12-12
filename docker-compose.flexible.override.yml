@@ -1,23 +1,18 @@
 # Docker Compose Override for Flexible Multi-Site Local Development
-# Mounts wp-content for instant changes
+# Development toggles (debug, explicit WP_CONTENT_DIR)
 
 services:
   wordpress1:
-    volumes:
-      # Mount wp-content for live development (plugins, themes)
-      - ./wp-content:/var/www/html/wp-content
-      # Exclude uploads from mount - use separate volume
-      - wp1_uploads:/var/www/html/wp-content/uploads
     environment:
       - WP_CONTENT_DIR=/var/www/html/wp-content
       - WP_DEBUG=${WP_DEBUG:-1}
 
   wordpress2:
-    volumes:
-      # Mount wp-content for live development (plugins, themes)
-      - ./wp-content:/var/www/html/wp-content
-      # Exclude uploads from mount - use separate volume
-      - wp2_uploads:/var/www/html/wp-content/uploads
+    environment:
+      - WP_CONTENT_DIR=/var/www/html/wp-content
+      - WP_DEBUG=${WP_DEBUG:-1}
+
+  wordpress3:
     environment:
       - WP_CONTENT_DIR=/var/www/html/wp-content
       - WP_DEBUG=${WP_DEBUG:-1}

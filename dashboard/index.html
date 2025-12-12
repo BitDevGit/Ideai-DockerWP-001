@@ -194,25 +194,37 @@
             </div>
 
             <!-- Site 1 -->
-            <div class="site-card flexible" onclick="window.open('http://site1.local', '_blank')">
+            <div class="site-card flexible" onclick="window.open('http://site1.localhost', '_blank')">
                 <div class="site-icon">🌐</div>
                 <div class="site-title">Site 1</div>
-                <div class="site-type">Normal / Subdomain MS / Subdirectory MS</div>
+                <div class="site-type">Single site (example)</div>
                 <div class="site-links">
-                    <a href="http://site1.local" target="_blank" class="btn btn-primary" onclick="event.stopPropagation()">Frontend</a>
-                    <a href="http://site1.local/wp-admin" target="_blank" class="btn btn-secondary" onclick="event.stopPropagation()">Admin</a>
+                    <a href="http://site1.localhost" target="_blank" class="btn btn-primary" onclick="event.stopPropagation()">Frontend</a>
+                    <a href="http://site1.localhost/wp-admin" target="_blank" class="btn btn-secondary" onclick="event.stopPropagation()">Admin</a>
                 </div>
                 <span class="status active">Active</span>
             </div>
 
             <!-- Site 2 -->
-            <div class="site-card flexible" onclick="window.open('http://site2.local', '_blank')">
+            <div class="site-card flexible" onclick="window.open('http://site2.localhost', '_blank')">
                 <div class="site-icon">🌐</div>
                 <div class="site-title">Site 2</div>
-                <div class="site-type">Normal / Subdomain MS / Subdirectory MS</div>
+                <div class="site-type">Multisite (subdomains) example</div>
                 <div class="site-links">
-                    <a href="http://site2.local" target="_blank" class="btn btn-primary" onclick="event.stopPropagation()">Frontend</a>
-                    <a href="http://site2.local/wp-admin" target="_blank" class="btn btn-secondary" onclick="event.stopPropagation()">Admin</a>
+                    <a href="http://site2.localhost" target="_blank" class="btn btn-primary" onclick="event.stopPropagation()">Frontend</a>
+                    <a href="http://site2.localhost/wp-admin" target="_blank" class="btn btn-secondary" onclick="event.stopPropagation()">Admin</a>
+                </div>
+                <span class="status active">Active</span>
+            </div>
+
+            <!-- Site 3 -->
+            <div class="site-card flexible" onclick="window.open('http://site3.localhost', '_blank')">
+                <div class="site-icon">🌐</div>
+                <div class="site-title">Site 3</div>
+                <div class="site-type">Multisite (subdirectories) example</div>
+                <div class="site-links">
+                    <a href="http://site3.localhost" target="_blank" class="btn btn-primary" onclick="event.stopPropagation()">Frontend</a>
+                    <a href="http://site3.localhost/wp-admin" target="_blank" class="btn btn-secondary" onclick="event.stopPropagation()">Admin</a>
                 </div>
                 <span class="status active">Active</span>
             </div>
@@ -222,9 +234,12 @@
             <h2>📋 Quick Info</h2>
             <p>
                 <strong>Single Site:</strong> Standard WordPress installation at localhost<br>
-                <strong>Site 1 & Site 2:</strong> Flexible setup - can be configured as normal WordPress, subdomain multisite, or subdirectory multisite<br>
+                <strong>Site 1:</strong> Single site example (recommended: <code>site1.localhost</code>)<br>
+                <strong>Site 2:</strong> Multisite (subdomains) example (recommended: <code>site2.localhost</code>)<br>
+                <strong>Site 3:</strong> Multisite (subdirectories) example (recommended: <code>site3.localhost</code>)<br>
                 <strong>Shared wp-content:</strong> All sites share the same themes and plugins folder<br>
-                <strong>Separate databases:</strong> Each top-level domain has its own database
+                <strong>Separate databases:</strong> Each top-level domain has its own database<br>
+                <strong>Note:</strong> <code>.localhost</code> domains resolve automatically (no <code>/etc/hosts</code> edits needed)
             </p>
         </div>
     </div>
@@ -233,8 +248,9 @@
         // Check site availability
         const sites = [
             { url: 'http://localhost', name: 'Single Site' },
-            { url: 'http://site1.local', name: 'Site 1' },
-            { url: 'http://site2.local', name: 'Site 2' }
+            { url: 'http://site1.localhost', name: 'Site 1' },
+            { url: 'http://site2.localhost', name: 'Site 2' },
+            { url: 'http://site3.localhost', name: 'Site 3' }
         ];
 
         // Update status indicators (optional - can be enhanced with actual health checks)

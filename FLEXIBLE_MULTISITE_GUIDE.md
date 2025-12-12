@@ -2,19 +2,33 @@
 
 ## 🎯 What This Supports
 
-For each top-level domain (site1.local, site2.local):
+This environment runs **three separate WordPress installs** (each with its own DB) and a **shared `wp-content/`** folder.
+
+Recommended local domains (no `sudo`, no `/etc/hosts` edits needed):
+
+1. **Site 1 (single site example)**: `site1.localhost`
+2. **Site 2 (multisite subdomains example)**: `site2.localhost` (+ `sub1.site2.localhost`, `sub2.site2.localhost`, …)
+3. **Site 3 (multisite subdirectories example)**: `site3.localhost` (+ `/sub1`, `/sub2`, …)
+
+Optional aliases (requires `/etc/hosts`): `site1.local`, `site2.local`, `site3.local`
+
+---
+
+## 🔧 Modes Supported (per site)
+
+Each top-level domain can be configured as:
 
 1. **Normal WordPress Site**
-   - Single site: `site1.local`
+   - Single site: `site1.localhost`
 
 2. **Subdomain Multisite**
-   - Main: `site1.local`
-   - Subs: `subdomain1.site1.local`, `subdomain2.site1.local`
+   - Main: `site2.localhost`
+   - Subs: `sub1.site2.localhost`, `sub2.site2.localhost`
    - One database (shared tables)
 
 3. **Subdirectory Multisite**
-   - Main: `site1.local`
-   - Subs: `site1.local/subdirectory1`, `site1.local/subdirectory2`
+   - Main: `site3.localhost`
+   - Subs: `site3.localhost/sub1`, `site3.localhost/sub2`
    - One database (shared tables)
 
 **All share:** wp-content (themes, plugins)  
@@ -33,13 +47,15 @@ docker-compose -f docker-compose.flexible.yml up -d
 ```
 
 ### 3. Access Sites
-- http://site1.local
-- http://site2.local
+- Dashboard: `http://localhost`
+- Site 1: `http://site1.localhost`
+- Site 2: `http://site2.localhost`
+- Site 3: `http://site3.localhost`
 
 ## 📋 Configuration
 
 ### Normal WordPress Site
-1. Visit http://site1.local
+1. Visit `http://site1.localhost`
 2. Complete WordPress installation
 3. Done - single site
 
