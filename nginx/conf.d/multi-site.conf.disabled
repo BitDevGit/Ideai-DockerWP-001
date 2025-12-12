@@ -1,0 +1,133 @@
+# Multi-Site Nginx Configuration
+# Routes site1.local and site2.local to respective WordPress instances
+
+# Upstream for Site 1
+upstream wordpress1 {
+    server wordpress1:9000;
+}
+
+# Upstream for Site 2
+upstream wordpress2 {
+    server wordpress2:9000;
+}
+
+# Site 1 - site1.local
+server {
+    listen 80;
+    server_name site1.local;
+    root /var/www/html;
+    index index.php index.html index.htm;
+
+    # Logging
+    access_log /var/log/nginx/site1-access.log;
+    error_log /var/log/nginx/site1-error.log warn;
+
+    # WordPress multisite support
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    # PHP processing - Site 1
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass wordpress1;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTP_PROXY "";
+    }
+
+    # Static files caching
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Deny access to wp-config.php
+    location ~ wp-config.php {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # WordPress admin area
+    location ~ ^/wp-admin/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    # WordPress multisite uploads
+    location ~* /files/(.*)$ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+}
+
+# Site 2 - site2.local
+server {
+    listen 80;
+    server_name site2.local;
+    root /var/www/html;
+    index index.php index.html index.htm;
+
+    # Logging
+    access_log /var/log/nginx/site2-access.log;
+    error_log /var/log/nginx/site2-error.log warn;
+
+    # WordPress multisite support
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    # PHP processing - Site 2
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_pass wordpress2;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param HTTP_PROXY "";
+    }
+
+    # Static files caching
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # Deny access to wp-config.php
+    location ~ wp-config.php {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    # WordPress admin area
+    location ~ ^/wp-admin/ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    # WordPress multisite uploads
+    location ~* /files/(.*)$ {
+        try_files $uri $uri/ /index.php?$args;
+    }
+}
+

@@ -1,0 +1,119 @@
+# Multi-Site WordPress Development Environment
+# Two separate WordPress sites, each with own database, sharing wp-content
+
+services:
+  # Nginx - Routes to both sites
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/multi-site.conf:/etc/nginx/conf.d/default.conf:ro
+      - wp_content_shared:/var/www/html/wp-content:ro
+    depends_on:
+      - wordpress1
+      - wordpress2
+    restart: unless-stopped
+    networks:
+      - wp-network
+
+  # WordPress Site 1
+  wordpress1:
+    image: wordpress:6.4-php8.2-fpm
+    volumes:
+      - wp1_data:/var/www/html
+      - wp_content_shared:/var/www/html/wp-content
+      - wp1_uploads:/var/www/html/wp-content/uploads
+    environment:
+      WORDPRESS_DB_HOST: db1:3306
+      WORDPRESS_DB_USER: ${DB1_USER:-wordpress1}
+      WORDPRESS_DB_PASSWORD: ${DB1_PASSWORD:-site1_password}
+      WORDPRESS_DB_NAME: ${DB1_NAME:-wordpress1}
+    depends_on:
+      - db1
+    restart: unless-stopped
+    networks:
+      - wp-network
+
+  # WordPress Site 2
+  wordpress2:
+    image: wordpress:6.4-php8.2-fpm
+    volumes:
+      - wp2_data:/var/www/html
+      - wp_content_shared:/var/www/html/wp-content
+      - wp2_uploads:/var/www/html/wp-content/uploads
+    environment:
+      WORDPRESS_DB_HOST: db2:3306
+      WORDPRESS_DB_USER: ${DB2_USER:-wordpress2}
+      WORDPRESS_DB_PASSWORD: ${DB2_PASSWORD:-site2_password}
+      WORDPRESS_DB_NAME: ${DB2_NAME:-wordpress2}
+    depends_on:
+      - db2
+    restart: unless-stopped
+    networks:
+      - wp-network
+
+  # Database for Site 1
+  db1:
+    image: mysql:8.0
+    volumes:
+      - db1_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB1_ROOT_PASSWORD:-root_site1_password}
+      MYSQL_DATABASE: ${DB1_NAME:-wordpress1}
+      MYSQL_USER: ${DB1_USER:-wordpress1}
+      MYSQL_PASSWORD: ${DB1_PASSWORD:-site1_password}
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=64M --max-connections=100
+    restart: unless-stopped
+    networks:
+      - wp-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB1_ROOT_PASSWORD:-root_site1_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Database for Site 2
+  db2:
+    image: mysql:8.0
+    volumes:
+      - db2_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB2_ROOT_PASSWORD:-root_site2_password}
+      MYSQL_DATABASE: ${DB2_NAME:-wordpress2}
+      MYSQL_USER: ${DB2_USER:-wordpress2}
+      MYSQL_PASSWORD: ${DB2_PASSWORD:-site2_password}
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=64M --max-connections=100
+    restart: unless-stopped
+    networks:
+      - wp-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB2_ROOT_PASSWORD:-root_site2_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  # Shared wp-content (themes, plugins)
+  wp_content_shared:
+    driver: local
+  # Site 1 volumes
+  wp1_data:
+    driver: local
+  wp1_uploads:
+    driver: local
+  db1_data:
+    driver: local
+  # Site 2 volumes
+  wp2_data:
+    driver: local
+  wp2_uploads:
+    driver: local
+  db2_data:
+    driver: local
+
+networks:
+  wp-network:
+    driver: bridge
+
