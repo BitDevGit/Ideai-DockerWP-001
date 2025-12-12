@@ -22,3 +22,4 @@ services:
       - WP_CONTENT_DIR=/var/www/html/wp-content
       - WP_DEBUG=${WP_DEBUG:-1}
 
+

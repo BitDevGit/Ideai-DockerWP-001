@@ -140,3 +140,4 @@ docker-compose exec wordpress wp eval-file scripts/migration/migrate-serialized-
 5. **Check serialized**: Use PHP script for complex serialized data
 
 
+

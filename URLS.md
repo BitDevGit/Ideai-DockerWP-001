@@ -70,3 +70,4 @@ When migrating from local to AWS:
 - Database migration handles URL rewrites automatically
 
 
+
