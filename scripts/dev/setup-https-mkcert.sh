@@ -181,6 +181,17 @@ server {
     root /var/www/site3;
     index index.php index.html index.htm;
 
+    # WordPress Multisite (subdirectories) — standard nginx rules (generalized to support multi-level paths)
+    #
+    # These rules strip any leading /subsite[/subsubsite...] prefix when routing core paths to WordPress.
+    # This keeps behavior consistent and avoids wp-admin redirect loops.
+    rewrite ^(/.+)?/wp-admin$ $scheme://$host$1/wp-admin/ permanent;
+
+    if (!-e $request_filename) {
+        rewrite ^(/.+)?(/wp-(content|admin|includes).*) $2 last;
+        rewrite ^(/.+)?(/.*\\.php)$ $2 last;
+    }
+
     location / {
         try_files $uri $uri/ /index.php?$args;
     }
