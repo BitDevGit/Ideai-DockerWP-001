@@ -24,8 +24,8 @@ if [ "$EUID" -ne 0 ]; then
     echo "⚠️  This script needs sudo to modify /etc/hosts"
     echo "   You can also manually add these entries:"
     echo ""
-    echo "   127.0.0.1  site1.local"
-    echo "   127.0.0.1  site2.local"
+    echo "   127.0.0.1  site1.localwp"
+    echo "   127.0.0.1  site2.localwp"
     echo ""
     read -p "Continue with sudo? (y/n) " -n 1 -r
     echo
@@ -37,27 +37,27 @@ fi
 # Add hosts entries
 echo "📝 Adding hosts entries..."
 
-if grep -q "site1.local" "$HOSTS_FILE"; then
-    echo "   ⚠️  site1.local already exists in hosts file"
+if grep -q "site1.localwp" "$HOSTS_FILE"; then
+    echo "   ⚠️  site1.localwp already exists in hosts file"
 else
     if [ "$EUID" -eq 0 ]; then
-        echo "127.0.0.1  site1.local" >> "$HOSTS_FILE"
-        echo "   ✅ Added site1.local"
+        echo "127.0.0.1  site1.localwp" >> "$HOSTS_FILE"
+        echo "   ✅ Added site1.localwp"
     else
-        echo "127.0.0.1  site1.local" | sudo tee -a "$HOSTS_FILE" > /dev/null
-        echo "   ✅ Added site1.local"
+        echo "127.0.0.1  site1.localwp" | sudo tee -a "$HOSTS_FILE" > /dev/null
+        echo "   ✅ Added site1.localwp"
     fi
 fi
 
-if grep -q "site2.local" "$HOSTS_FILE"; then
-    echo "   ⚠️  site2.local already exists in hosts file"
+if grep -q "site2.localwp" "$HOSTS_FILE"; then
+    echo "   ⚠️  site2.localwp already exists in hosts file"
 else
     if [ "$EUID" -eq 0 ]; then
-        echo "127.0.0.1  site2.local" >> "$HOSTS_FILE"
-        echo "   ✅ Added site2.local"
+        echo "127.0.0.1  site2.localwp" >> "$HOSTS_FILE"
+        echo "   ✅ Added site2.localwp"
     else
-        echo "127.0.0.1  site2.local" | sudo tee -a "$HOSTS_FILE" > /dev/null
-        echo "   ✅ Added site2.local"
+        echo "127.0.0.1  site2.localwp" | sudo tee -a "$HOSTS_FILE" > /dev/null
+        echo "   ✅ Added site2.localwp"
     fi
 fi
 
@@ -69,8 +69,8 @@ echo "   1. Start the multi-site environment:"
 echo "      docker-compose -f docker-compose.multi.yml up -d"
 echo ""
 echo "   2. Access the sites:"
-echo "      http://site1.local"
-echo "      http://site2.local"
+echo "      https://site1.localwp"
+echo "      https://site2.localwp"
 echo ""
 echo "   3. Complete WordPress installation on both sites"
 echo ""

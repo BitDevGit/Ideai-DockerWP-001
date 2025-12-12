@@ -2,22 +2,22 @@
 
 ## 🎯 Requirements
 
-Support for each top-level domain (site1.local, site2.local):
+Support for each top-level domain (site1.localwp, site2.localwp):
 
 1. **Normal WordPress Site**
    - Single site installation
-   - Example: `site1.local`
+   - Example: `site1.localwp`
 
 2. **Subdomain Multisite**
    - One WordPress multisite installation
-   - Main site: `site1.local`
-   - Sub-sites: `subdomain1.site1.local`, `subdomain2.site1.local`
+   - Main site: `site2.localwp`
+   - Sub-sites: `sub1.site2.localwp`, `sub2.site2.localwp`
    - One database per top-level domain
 
 3. **Subdirectory Multisite**
    - One WordPress multisite installation
-   - Main site: `site1.local`
-   - Sub-sites: `site1.local/subdirectory1`, `site1.local/subdirectory2`
+   - Main site: `site3.localwp`
+   - Sub-sites: `site3.localwp/sub1`, `site3.localwp/sub2`
    - One database per top-level domain
 
 ## 🏗️ Architecture
@@ -26,10 +26,10 @@ Support for each top-level domain (site1.local, site2.local):
 ┌─────────────────────────────────────────────────────────┐
 │                    Nginx (Port 80)                      │
 │  ┌──────────────────┐  ┌──────────────────┐            │
-│  │  site1.local     │  │  site2.local     │            │
+│  │  site1.localwp   │  │  site2.localwp   │            │
 │  │  (Normal/MS)     │  │  (Normal/MS)     │            │
 │  │                   │  │                   │            │
-│  │  *.site1.local    │  │  *.site2.local    │            │
+│  │  *.site1.localwp  │  │  *.site2.localwp  │            │
 │  │  (Subdomain MS)   │  │  (Subdomain MS)  │            │
 │  └────────┬──────────┘  └────────┬──────────┘            │
 └───────────┼──────────────────────┼──────────────────────┘
@@ -45,7 +45,7 @@ Support for each top-level domain (site1.local, site2.local):
          ▼                          ▼
 ┌──────────────────┐      ┌──────────────────┐
 │   Database 1     │      │   Database 2     │
-│   (site1.local)  │      │   (site2.local)  │
+│  (site1.localwp) │      │  (site2.localwp) │
 └──────────────────┘      └──────────────────┘
          │                          │
          └──────────┬───────────────┘
@@ -88,10 +88,10 @@ services:
     # Site2 (normal or multisite)
     
   db1:
-    # Database for site1.local
+    # Database for site1.localwp
     
   db2:
-    # Database for site2.local
+    # Database for site2.localwp
     
 volumes:
   wp_content_shared:  # Shared themes/plugins
@@ -105,8 +105,8 @@ volumes:
 
 ### Nginx Configuration
 
-- Main domains: `site1.local`, `site2.local`
-- Wildcard subdomains: `*.site1.local`, `*.site2.local`
+- Main domains: `site1.localwp`, `site2.localwp`
+- Wildcard subdomains: `*.site1.localwp`, `*.site2.localwp`
 - All route to respective WordPress container
 
 ### WordPress Configuration

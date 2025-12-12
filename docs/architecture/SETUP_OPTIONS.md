@@ -18,7 +18,7 @@ You want to develop locally with:
 
 ### Option 2: Multiple Separate Sites (Current Multi)
 **File:** `docker-compose.multi.yml`
-- **URLs:** http://site1.local, http://site2.local
+- **URLs:** https://site1.localwp, https://site2.localwp
 - **Type:** 2 separate WordPress installations
 - **Database:** 2 separate databases
 - **Shared:** wp-content (themes, plugins)
@@ -27,7 +27,7 @@ You want to develop locally with:
 ### Option 3: WordPress Multisite (NOT YET CREATED)
 **What you might need:**
 - **URLs:** 
-  - Subdomain: http://site1.local, http://site2.local (subdomain multisite)
+  - Subdomain: https://site2.localwp (+ https://sub1.site2.localwp, ...) (subdomain multisite)
   - Subdirectory: http://localhost/site1, http://localhost/site2 (subdirectory multisite)
 - **Type:** One WordPress installation, multiple sites
 - **Database:** One database (shared tables)
@@ -43,7 +43,7 @@ You want to develop locally with:
 
 ### B) WordPress Multisite (Subdomain)
 - One WordPress installation
-- Multiple sites: `site1.local`, `site2.local`, etc.
+- Multiple sites: `site2.localwp`, `sub1.site2.localwp`, etc.
 - All share same database
 - Need to configure WordPress multisite
 
@@ -65,7 +65,7 @@ Based on your request, I think you want:
 
 **WordPress Multisite Setup:**
 - One WordPress installation
-- Multiple sites as subdomains (site1.local, site2.local) OR subdirectories (localhost/site1, localhost/site2)
+- Multiple sites as subdomains (site2.localwp, sub1.site2.localwp, ...) OR subdirectories (localhost/site1, localhost/site2)
 - One shared database
 - Shared wp-content
 

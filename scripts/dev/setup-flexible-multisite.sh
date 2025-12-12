@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # Setup script for flexible multi-site WordPress development
-# Adds optional hosts entries for site1.local, site2.local, site3.local
-# Note: `.localhost` domains (e.g. site1.localhost, sub1.site2.localhost) resolve automatically without /etc/hosts edits.
+# Adds optional hosts entries for site1.localwp, site2.localwp, site3.localwp
+# Note: subdomain multisite requires either:
+# - adding individual subdomains to /etc/hosts (e.g. sub1.site2.localwp), or
+# - using a local DNS resolver (e.g. dnsmasq) to wildcard *.site2.localwp.
 
 set -e
 
@@ -15,37 +17,45 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
 fi
 
 HOSTS_FILE="/etc/hosts"
-ENTRIES=(
-    "127.0.0.1  site1.local"
-    "127.0.0.1  site2.local"
-    "127.0.0.1  site3.local"
-)
+BEGIN_MARKER="# BEGIN IDEAI LOCALWP"
+END_MARKER="# END IDEAI LOCALWP"
 
-echo "📝 Adding hosts entries..."
+echo "📝 Syncing /etc/hosts (idempotent, no duplicates)..."
 
-for entry in "${ENTRIES[@]}"; do
-    domain=$(echo "$entry" | awk '{print $2}')
-    if grep -q "$domain" "$HOSTS_FILE" 2>/dev/null; then
-        echo "   ⚠️  $domain already exists"
-    else
-        echo "$entry" | sudo tee -a "$HOSTS_FILE" > /dev/null
-        echo "   ✅ Added $domain"
-    fi
-done
+sudo python3 - <<PY
+import pathlib, re
+hosts_path = pathlib.Path("$HOSTS_FILE")
+s = hosts_path.read_text() if hosts_path.exists() else ""
+begin = re.escape("$BEGIN_MARKER")
+end = re.escape("$END_MARKER")
+s = re.sub(rf"(?ms)^({begin})\\n.*?^({end})\\n?", "", s)
+if s and not s.endswith("\\n"):
+    s += "\\n"
+block = "\\n".join([
+  "$BEGIN_MARKER",
+  "# Managed by scripts/dev/setup-flexible-multisite.sh (safe to re-run)",
+  "127.0.0.1  site1.localwp",
+  "127.0.0.1  site2.localwp",
+  "127.0.0.1  site3.localwp",
+  "$END_MARKER",
+  "",
+])
+hosts_path.write_text(s + block)
+PY
+
+echo "🧹 Flushing DNS cache (macOS)..."
+sudo dscacheutil -flushcache || true
+sudo killall -HUP mDNSResponder || true
 
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📋 Next steps:"
 echo "   1. Start: docker-compose -f docker-compose.flexible.yml up -d"
-echo "   2. Access (recommended, no hosts needed):"
-echo "      - http://site1.localhost"
-echo "      - http://site2.localhost"
-echo "      - http://site3.localhost"
-echo "   3. Access (optional, requires hosts):"
-echo "      - http://site1.local"
-echo "      - http://site2.local"
-echo "      - http://site3.local"
+echo "   2. Access:"
+echo "      - https://site1.localwp"
+echo "      - https://site2.localwp"
+echo "      - https://site3.localwp"
 echo "   3. Configure WordPress (normal or multisite)"
 echo ""
 

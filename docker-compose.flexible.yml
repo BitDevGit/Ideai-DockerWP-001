@@ -9,10 +9,16 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d/flexible-multisite.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./dashboard:/var/www/dashboard:ro
+      # Optional HTTPS vhosts (empty by default; populated by scripts/dev/setup-https-mkcert.sh)
+      - ./nginx/conf.d/https:/etc/nginx/conf.d/https:ro
+      # Certificates (generated locally, not committed)
+      - ./nginx/certs:/etc/nginx/certs:ro
+      # Dashboard (subtree-ready module)
+      - ./vendor/ideai-local-dev-dashboard/dashboard:/var/www/dashboard:ro
       - wp1_data:/var/www/site1:ro
       - wp2_data:/var/www/site2:ro
       - wp3_data:/var/www/site3:ro

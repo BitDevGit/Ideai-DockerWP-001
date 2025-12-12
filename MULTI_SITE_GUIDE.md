@@ -6,8 +6,8 @@ Run **2 separate WordPress sites** locally, each with its own database, sharing 
 
 ## 🏗️ Architecture
 
-- **Site 1**: `site1.local` → WordPress 1 → Database 1
-- **Site 2**: `site2.local` → WordPress 2 → Database 2
+- **Site 1**: `site1.localwp` → WordPress 1 → Database 1
+- **Site 2**: `site2.localwp` → WordPress 2 → Database 2
 - **Shared**: `wp-content/` (themes, plugins) - volume mounted for instant changes
 
 ## 🚀 Quick Start
@@ -19,8 +19,8 @@ Run **2 separate WordPress sites** locally, each with its own database, sharing 
 ./scripts/dev/setup-multi-site.sh
 
 # Or manually add to /etc/hosts:
-# 127.0.0.1  site1.local
-# 127.0.0.1  site2.local
+# 127.0.0.1  site1.localwp
+# 127.0.0.1  site2.localwp
 ```
 
 ### 2. Start Multi-Site Environment
@@ -31,8 +31,8 @@ docker-compose -f docker-compose.multi.yml up -d
 
 ### 3. Access Sites
 
-- **Site 1**: http://site1.local
-- **Site 2**: http://site2.local
+- **Site 1**: https://site1.localwp
+- **Site 2**: https://site2.localwp
 
 ### 4. Complete WordPress Installation
 
@@ -41,7 +41,7 @@ Visit each site and complete the WordPress installation wizard.
 ## 📋 What's Included
 
 ### Containers
-- **nginx**: Routes `site1.local` and `site2.local` to respective WordPress instances
+- **nginx**: Routes `site1.localwp` and `site2.localwp` to respective WordPress instances
 - **wordpress1**: PHP-FPM for Site 1
 - **wordpress2**: PHP-FPM for Site 2
 - **db1**: Database for Site 1

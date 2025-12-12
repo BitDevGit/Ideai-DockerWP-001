@@ -50,9 +50,13 @@ wp-content/upgrade/
 !wp-content/themes/.gitkeep
 
 # SSL
-nginx/ssl/*.pem
-nginx/ssl/*.key
-!nginx/ssl/.gitkeep
+nginx/certs/*.pem
+nginx/certs/*.key
+!nginx/certs/.gitkeep
+
+# Generated local HTTPS nginx vhosts (created by setup-https-mkcert.sh)
+nginx/conf.d/https/*.conf
+!nginx/conf.d/https/.gitkeep
 
 # Temporary
 *.tmp

@@ -1,0 +1,15 @@
+{
+  "baseTld": "localwp",
+  "dashboardHost": "localhost",
+  "sites": [
+    { "key": "site1", "host": "site1.localwp", "mode": "single" },
+    { "key": "site2", "host": "site2.localwp", "mode": "multisite-subdomains", "wildcardHost": "*.site2.localwp" },
+    { "key": "site3", "host": "site3.localwp", "mode": "multisite-subdirectories" }
+  ],
+  "notes": {
+    "httpsOnly": true,
+    "hostsFileRequired": true,
+    "hostsFileWildcardsUnsupported": true
+  }
+}
+
