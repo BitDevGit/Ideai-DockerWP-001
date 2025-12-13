@@ -54,6 +54,11 @@ function resolve_network_id($domain, $path) {
  * @return mixed
  */
 function pre_get_site_by_path($site, $domain, $path, $segments) {
+	// Never run in admin context - this is for frontend request routing only
+	if (function_exists('is_admin') && is_admin()) {
+		return $site;
+	}
+	
 	if (!is_subdirectory_multisite()) {
 		return $site;
 	}
@@ -88,7 +93,6 @@ function pre_get_site_by_path($site, $domain, $path, $segments) {
 	return $site;
 }
 
-// Run early to ensure we get the correct site before WordPress caches it
-add_filter('pre_get_site_by_path', __NAMESPACE__ . '\\pre_get_site_by_path', 5, 4);
+add_filter('pre_get_site_by_path', __NAMESPACE__ . '\\pre_get_site_by_path', 10, 4);
 
 

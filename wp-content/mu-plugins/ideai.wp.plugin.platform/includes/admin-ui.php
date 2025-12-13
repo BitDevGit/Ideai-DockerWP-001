@@ -66,38 +66,6 @@ function register_network_menu() {
 }
 add_action('network_admin_menu', __NAMESPACE__ . '\\register_network_menu');
 
-// One-time sync: ensure all nested sites have correct database paths
-function sync_nested_site_paths_once() {
-	if (!is_multisite() || !is_network_admin()) {
-		return;
-	}
-	if (!current_user_can('manage_network')) {
-		return;
-	}
-	
-	static $synced = false;
-	if ($synced) {
-		return;
-	}
-	
-	$network_id = function_exists('get_current_network_id') ? (int) get_current_network_id() : 0;
-	if (!$network_id || !Platform\nested_tree_enabled($network_id)) {
-		return;
-	}
-	
-	$synced_count = NestedTree\sync_all_blog_paths($network_id);
-	if ($synced_count > 0) {
-		// Log but don't show notice - silent fix
-		Platform\log_msg('nested_tree synced database paths', array(
-			'network_id' => $network_id,
-			'synced_count' => $synced_count,
-		));
-	}
-	
-	$synced = true;
-}
-add_action('network_admin_init', __NAMESPACE__ . '\\sync_nested_site_paths_once', 1);
-
 function handle_save_flags() {
 	// admin-post.php doesn't have full admin context, so check multisite + capability directly.
 	if (!function_exists('is_multisite') || !is_multisite()) {
@@ -226,21 +194,13 @@ function handle_wpmu_new_blog($blog_id, $user_id, $domain, $path, $site_id, $met
 		return;
 	}
 	
-	// Get the actual site path - try multiple times in case of timing issues
-	$site = null;
-	$current_path = '';
-	for ($i = 0; $i < 3; $i++) {
-		$site = function_exists('get_site') ? get_site((int) $blog_id) : null;
-		if ($site && !empty($site->path)) {
-			$current_path = (string) $site->path;
-			break;
-		}
-		usleep(100000); // Wait 100ms and try again
-	}
-	
-	if (empty($current_path)) {
+	// Get the actual site path
+	$site = function_exists('get_site') ? get_site((int) $blog_id) : null;
+	if (!$site || empty($site->path)) {
 		return;
 	}
+	
+	$current_path = (string) $site->path;
 	
 	// Check if path contains -- (indicating nested internal path like sub1--subsub1)
 	if (strpos($current_path, '--') === false) {
@@ -258,25 +218,15 @@ function handle_wpmu_new_blog($blog_id, $user_id, $domain, $path, $site_id, $met
 	$nested_path = '/' . implode('/', $segments) . '/';
 	$nested_path = NestedTree\normalize_path($nested_path);
 	
-	// CRITICAL: Update database path FIRST, then save mapping
+	// Update the WordPress site path directly (WordPress allows / after creation)
 	if (function_exists('update_blog_details')) {
 		update_blog_details((int) $blog_id, array('path' => $nested_path));
 	}
 	
-	// Save the nested path mapping (this also updates wp_blogs.path as backup)
+	// Save the nested path mapping
 	NestedTree\upsert_blog_path((int) $blog_id, $nested_path, $network_id);
-	
-	// Clear all caches to ensure WordPress sees the updated path immediately
-	if (function_exists('clean_blog_cache')) {
-		clean_blog_cache((int) $blog_id);
-	}
-	global $wpdb;
-	if (isset($wpdb)) {
-		wp_cache_delete((int) $blog_id, 'blog-details');
-		wp_cache_delete((int) $blog_id . 'short', 'blog-details');
-	}
 }
-add_action('wpmu_new_blog', __NAMESPACE__ . '\\handle_wpmu_new_blog', 5, 6); // Run early (priority 5)
+add_action('wpmu_new_blog', __NAMESPACE__ . '\\handle_wpmu_new_blog', 10, 6);
 
 function render_site_new_integration() {
 	if (!should_load_network_ui()) {
