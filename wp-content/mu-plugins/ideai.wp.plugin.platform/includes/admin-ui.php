@@ -224,22 +224,7 @@ function handle_wpmu_new_blog($blog_id, $user_id, $domain, $path, $site_id, $met
 	}
 	
 	// Save the nested path mapping
-	$ok = NestedTree\upsert_blog_path((int) $blog_id, $nested_path, $network_id);
-	if (!$ok) {
-		Platform\log_msg('nested_tree auto-mapping failed', array(
-			'network_id' => $network_id,
-			'blog_id' => (int) $blog_id,
-			'internal_path' => $current_path,
-			'nested_path' => $nested_path,
-		));
-	} else {
-		Platform\log_msg('nested_tree auto-updated path', array(
-			'network_id' => $network_id,
-			'blog_id' => (int) $blog_id,
-			'old_path' => $current_path,
-			'new_path' => $nested_path,
-		));
-	}
+	NestedTree\upsert_blog_path((int) $blog_id, $nested_path, $network_id);
 }
 add_action('wpmu_new_blog', __NAMESPACE__ . '\\handle_wpmu_new_blog', 10, 6);
 
