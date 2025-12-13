@@ -113,17 +113,6 @@ function sanitize_child_slug($slug) {
 	return $slug;
 }
 
-function internal_path_from_nested($nested_path) {
-	$nested_path = (string) $nested_path;
-	$nested_path = trim($nested_path, '/');
-	if ($nested_path === '') {
-		return '/';
-	}
-	$segments = preg_split('#/+#', $nested_path);
-	$segments = array_filter($segments, function ($s) { return $s !== ''; });
-	$flat = implode('--', $segments);
-	return '/' . $flat . '/';
-}
 
 function handle_create_nested_site() {
 	if (!should_load_network_ui()) {
@@ -438,12 +427,6 @@ function render_site_new_integration() {
 			prefix += "sub";
 		}
 		return prefix + "site";
-	}
-	
-	function calculateInternalPath(nestedPath) {
-		// Convert nested path like /sub1/subsub1/ to internal path like /sub1--subsub1/
-		var segments = nestedPath.split("/").filter(function(s) { return s !== ""; });
-		return "/" + segments.join("--") + "/";
 	}
 	
 	var previousSuggestedSlug = "";
