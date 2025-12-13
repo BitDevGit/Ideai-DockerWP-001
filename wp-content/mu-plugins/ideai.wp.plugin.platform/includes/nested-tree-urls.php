@@ -106,6 +106,24 @@ function maybe_rewrite_for_blog($url, $blog_id) {
 
 	$old_path = $p['path'] ?? '';
 	$new_path = replace_path_prefix($old_path, $internal, $mapped);
+	
+	// If path still contains --, try direct replacement as fallback
+	if ($new_path === $old_path && strpos($old_path, '--') !== false) {
+		// Convert any -- segments in the path to /
+		$path_parts = explode('/', $old_path);
+		$converted_parts = array();
+		foreach ($path_parts as $part) {
+			if (strpos($part, '--') !== false) {
+				$converted_parts[] = str_replace('--', '/', $part);
+			} else {
+				$converted_parts[] = $part;
+			}
+		}
+		$new_path = implode('/', $converted_parts);
+		// Normalize the path
+		$new_path = preg_replace('#/+#', '/', $new_path);
+	}
+	
 	if ($new_path === $old_path) {
 		return $url;
 	}
@@ -138,5 +156,19 @@ function filter_login_url($login_url, $redirect, $force_reauth) {
 	return maybe_rewrite_for_blog($login_url, $blog_id);
 }
 add_filter('login_url', __NAMESPACE__ . '\\filter_login_url', 20, 3);
+
+// network_site_url: second arg is path, third is scheme, no blog_id - use current blog
+function filter_network_site_url($url, $path, $scheme) {
+	$blog_id = function_exists('get_current_blog_id') ? get_current_blog_id() : 0;
+	return maybe_rewrite_for_blog($url, $blog_id);
+}
+add_filter('network_site_url', __NAMESPACE__ . '\\filter_network_site_url', 20, 3);
+
+// network_home_url: second arg is path, third is scheme, no blog_id - use current blog
+function filter_network_home_url($url, $path, $scheme) {
+	$blog_id = function_exists('get_current_blog_id') ? get_current_blog_id() : 0;
+	return maybe_rewrite_for_blog($url, $blog_id);
+}
+add_filter('network_home_url', __NAMESPACE__ . '\\filter_network_home_url', 20, 3);
 
 
