@@ -161,8 +161,11 @@ function handle_create_nested_site() {
 	$parent_mapped = NestedTree\normalize_path($parent_mapped);
 
 	$nested_path = NestedTree\normalize_path($parent_mapped . $child_slug . '/');
-	$internal_path = internal_path_from_nested($nested_path);
-
+	
+	// Create site with temporary slug (last segment only) - WordPress will accept this
+	// We'll update to nested path immediately after creation
+	$temp_slug = $child_slug; // Use child slug as temporary path
+	
 	$net = function_exists('get_network') ? get_network($network_id) : null;
 	if (!$net || empty($net->domain)) {
 		wp_die('Could not load network.');
@@ -170,11 +173,36 @@ function handle_create_nested_site() {
 
 	$title = 'Nested: ' . trim($nested_path, '/');
 	$user_id = get_current_user_id();
-	$blog_id = wpmu_create_blog((string) $net->domain, $internal_path, $title, $user_id, array(), $network_id);
+	
+	// Create site with temporary path (just the child slug)
+	$blog_id = wpmu_create_blog((string) $net->domain, '/' . $temp_slug . '/', $title, $user_id, array(), $network_id);
 	if (is_wp_error($blog_id)) {
 		wp_die($blog_id);
 	}
+	
+	// CRITICAL: Immediately update wp_blogs.path to nested path
+	// WordPress uses this for all URL generation
+	if (function_exists('update_blog_details')) {
+		update_blog_details((int) $blog_id, array('path' => $nested_path));
+	}
+	// Direct DB update as backup
+	global $wpdb;
+	$wpdb->update(
+		$wpdb->blogs,
+		array('path' => $nested_path),
+		array('blog_id' => (int) $blog_id),
+		array('%s'),
+		array('%d')
+	);
+	
+	// Clear cache
+	if (function_exists('clean_blog_cache')) {
+		clean_blog_cache((int) $blog_id);
+	}
+	wp_cache_delete((int) $blog_id, 'blog-details');
+	wp_cache_delete((int) $blog_id . 'short', 'blog-details');
 
+	// Save nested path mapping (for routing lookup)
 	$ok = NestedTree\upsert_blog_path((int) $blog_id, $nested_path, $network_id);
 	if (!$ok) {
 		if (function_exists('wpmu_delete_blog')) {
@@ -489,11 +517,9 @@ function render_site_new_integration() {
 			var childSlug = childInput.value.trim();
 			var nestedPath = parentPath + childSlug + "/";
 			
-			// Convert to internal WordPress path (flat with --)
-			var internalPath = calculateInternalPath(nestedPath);
-			
-			// Update WordPress Site Address field
-			wpSiteAddress.value = internalPath.replace(/^\\//, "").replace(/\\/$/, "");
+			// Use just the child slug for WordPress field (we'll update to nested path after creation)
+			// WordPress will create site with this, then we update to full nested path
+			wpSiteAddress.value = childSlug;
 		}
 	}
 	
