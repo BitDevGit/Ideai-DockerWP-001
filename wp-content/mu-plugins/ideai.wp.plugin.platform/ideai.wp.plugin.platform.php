@@ -114,9 +114,12 @@ function set_flag($key, $value, $network_id = null) {
 		if (!$network_id) {
 			$network_id = 1;
 		}
-		return (bool) update_network_option($network_id, $key, $value);
+		// update_network_option returns old value if unchanged, false on failure, true on success.
+		$result = update_network_option($network_id, $key, $value);
+		return $result !== false;
 	}
-	return (bool) update_option($key, $value);
+	$result = update_option($key, $value);
+	return $result !== false;
 }
 
 function nested_tree_enabled($network_id = null) {
