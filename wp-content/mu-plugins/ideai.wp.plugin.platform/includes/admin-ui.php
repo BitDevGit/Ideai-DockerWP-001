@@ -67,8 +67,9 @@ function register_network_menu() {
 add_action('network_admin_menu', __NAMESPACE__ . '\\register_network_menu');
 
 function handle_save_flags() {
-	if (!should_load_network_ui()) {
-		wp_die('Network admin only.');
+	// admin-post.php doesn't have full admin context, so check multisite + capability directly.
+	if (!function_exists('is_multisite') || !is_multisite()) {
+		wp_die('Multisite only.');
 	}
 	if (!current_user_can('manage_network_options')) {
 		wp_die('Insufficient permissions.');
