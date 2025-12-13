@@ -214,7 +214,7 @@ function handle_create_nested_site() {
 	wp_safe_redirect(network_admin_url('site-info.php?id=' . (int) $blog_id));
 	exit;
 }
-// Hook into WordPress standard site creation to convert -- paths to / paths
+// Hook into WordPress standard site creation to set nested path if nested site was created
 function handle_wpmu_new_blog($blog_id, $user_id, $domain, $path, $site_id, $meta) {
 	// Only process if nested tree is enabled
 	$network_id = function_exists('get_current_network_id') ? (int) get_current_network_id() : 0;
@@ -222,39 +222,56 @@ function handle_wpmu_new_blog($blog_id, $user_id, $domain, $path, $site_id, $met
 		return;
 	}
 	
-	// Get the actual site path
-	$site = function_exists('get_site') ? get_site((int) $blog_id) : null;
-	if (!$site || empty($site->path)) {
+	// Check if this was created via our nested site form (standard WordPress "Add Site" form)
+	$parent_blog_id = isset($_POST['ideai_parent_blog_id']) ? (int) $_POST['ideai_parent_blog_id'] : 0;
+	$child_slug_raw = isset($_POST['ideai_child_slug']) ? wp_unslash($_POST['ideai_child_slug']) : '';
+	
+	// Only process if nested site fields were used
+	if ($parent_blog_id <= 0 || empty($child_slug_raw)) {
+		return; // Standard WordPress site, not nested
+	}
+	
+	$child_slug = sanitize_child_slug($child_slug_raw);
+	if (empty($child_slug)) {
 		return;
 	}
 	
-	$current_path = (string) $site->path;
-	
-	// Check if path contains -- (indicating nested internal path like sub1--subsub1)
-	if (strpos($current_path, '--') === false) {
-		return; // Not a nested site, standard WordPress path
+	// Get parent path
+	$parent_mapped = NestedTree\get_blog_path($parent_blog_id, $network_id);
+	if (!$parent_mapped) {
+		$parent_site = get_site($parent_blog_id);
+		$parent_mapped = $parent_site && !empty($parent_site->path) ? $parent_site->path : '/';
 	}
+	$parent_mapped = NestedTree\normalize_path($parent_mapped);
 	
-	// Convert internal path (sub1--subsub1) to nested path (sub1/subsub1/)
-	$path_trimmed = trim($current_path, '/');
-	$segments = explode('--', $path_trimmed);
-	$segments = array_filter($segments, function ($s) { return $s !== ''; });
-	if (empty($segments)) {
-		return;
-	}
+	// Calculate nested path
+	$nested_path = NestedTree\normalize_path($parent_mapped . $child_slug . '/');
 	
-	$nested_path = '/' . implode('/', $segments) . '/';
-	$nested_path = NestedTree\normalize_path($nested_path);
-	
-	// Update the WordPress site path directly (WordPress allows / after creation)
+	// CRITICAL: Update wp_blogs.path to nested path immediately
 	if (function_exists('update_blog_details')) {
 		update_blog_details((int) $blog_id, array('path' => $nested_path));
 	}
+	// Direct DB update as backup
+	global $wpdb;
+	$wpdb->update(
+		$wpdb->blogs,
+		array('path' => $nested_path),
+		array('blog_id' => (int) $blog_id),
+		array('%s'),
+		array('%d')
+	);
 	
-	// Save the nested path mapping
+	// Clear cache
+	if (function_exists('clean_blog_cache')) {
+		clean_blog_cache((int) $blog_id);
+	}
+	wp_cache_delete((int) $blog_id, 'blog-details');
+	wp_cache_delete((int) $blog_id . 'short', 'blog-details');
+	
+	// Save nested path mapping (for routing)
 	NestedTree\upsert_blog_path((int) $blog_id, $nested_path, $network_id);
 }
-add_action('wpmu_new_blog', __NAMESPACE__ . '\\handle_wpmu_new_blog', 10, 6);
+add_action('wpmu_new_blog', __NAMESPACE__ . '\\handle_wpmu_new_blog', 5, 6);
 
 function render_site_new_integration() {
 	if (!should_load_network_ui()) {
