@@ -268,4 +268,44 @@ function resolve_blog_for_request_path($request_path, $network_id = null) {
 	return $out;
 }
 
+/**
+ * List registered mappings for a network.
+ *
+ * @return array<int,array{blog_id:int,path:string}>
+ */
+function list_mappings($network_id = null) {
+	if (!is_multisite()) {
+		return array();
+	}
+	if ($network_id === null && function_exists('get_current_network_id')) {
+		$network_id = get_current_network_id();
+	}
+	if (!$network_id) {
+		return array();
+	}
+
+	$network_id = (int) $network_id;
+	ensure_schema($network_id);
+
+	global $wpdb;
+	$table = table_name();
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+	$rows = $wpdb->get_results($wpdb->prepare("SELECT blog_id, path FROM {$table} WHERE network_id=%d ORDER BY LENGTH(path) ASC, path ASC", $network_id), ARRAY_A);
+	if (!is_array($rows)) {
+		return array();
+	}
+
+	$out = array();
+	foreach ($rows as $r) {
+		if (empty($r['blog_id']) || empty($r['path'])) {
+			continue;
+		}
+		$out[] = array(
+			'blog_id' => (int) $r['blog_id'],
+			'path' => normalize_path($r['path']),
+		);
+	}
+	return $out;
+}
+
 
