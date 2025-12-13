@@ -31,6 +31,7 @@ function flag_defaults() {
 
 require_once __DIR__ . '/includes/nested-tree.php';
 require_once __DIR__ . '/includes/nested-tree-routing.php';
+require_once __DIR__ . '/includes/nested-tree-urls.php';
 
 /**
  * Returns true when debug logging is enabled for the platform layer.
