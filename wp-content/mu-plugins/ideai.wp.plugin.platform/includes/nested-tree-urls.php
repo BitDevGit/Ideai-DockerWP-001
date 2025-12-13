@@ -1,10 +1,10 @@
 <?php
 /**
- * Nested tree multisite: outbound URL rewriting (safety net only).
+ * Nested tree multisite: outbound URL rewriting (universal rewrite).
  *
- * Since we store nested paths directly in wp_blogs.path, WordPress should generate
- * correct URLs automatically. This file is kept as a safety net for edge cases.
- * If wp_blogs.path is correct, these filters should rarely (if ever) fire.
+ * Always rewrites URLs to use the correct nested path from our mapping table.
+ * This ensures URLs are correct even if wp_blogs.path doesn't match or WordPress
+ * generates URLs using a different path format.
  */
 
 namespace Ideai\Wp\Platform\NestedTreeUrls;
@@ -107,14 +107,47 @@ function maybe_rewrite_for_blog($url, $blog_id) {
 
 	$old_path = $p['path'] ?? '';
 	
-	// If internal path (from wp_blogs.path) matches mapped path (from our table), no rewrite needed
-	// This should be the case now that we store nested paths directly in wp_blogs.path
-	if ($internal === $mapped) {
+	// If the path already starts with the mapped nested path, no rewrite needed
+	if (strpos($old_path, $mapped) === 0) {
 		return $url;
 	}
 	
-	// Safety net: only rewrite if paths don't match (shouldn't happen if DB is synced correctly)
+	// Extract segments for analysis
+	$internal_segments = array_filter(explode('/', trim($internal, '/')));
+	$mapped_segments = array_filter(explode('/', trim($mapped, '/')));
+	
+	// Strategy 1: Direct prefix replacement (if internal path matches start of URL)
 	$new_path = replace_path_prefix($old_path, $internal, $mapped);
+	
+	// Strategy 2: If that didn't work, WordPress might be using just the last segment
+	// e.g., WordPress generates /444/wp-admin/ but mapped is /sub1/444/
+	if ($new_path === $old_path && !empty($internal_segments) && !empty($mapped_segments)) {
+		$last_internal_segment = end($internal_segments); // e.g., "444"
+		
+		// Check if URL starts with /{last_segment}/
+		$pattern = '/' . preg_quote($last_internal_segment, '/') . '/';
+		if (preg_match('#^' . $pattern . '#', $old_path)) {
+			// Replace /444/ with /sub1/444/
+			$new_path = preg_replace('#^' . $pattern . '#', $mapped, $old_path);
+		} else {
+			// Try matching just the segment without leading slash (e.g., "444/wp-admin")
+			$pattern2 = '^/' . preg_quote($last_internal_segment, '/') . '(?=/|$)';
+			if (preg_match('#' . $pattern2 . '#', $old_path)) {
+				$new_path = preg_replace('#' . $pattern2 . '#', $mapped, $old_path);
+			}
+		}
+	}
+	
+	// Strategy 3: If still no match, try replacing any occurrence of the last segment
+	if ($new_path === $old_path && !empty($internal_segments)) {
+		$last_seg = end($internal_segments);
+		// Replace /{last_seg}/ anywhere in path with full mapped path
+		if (strpos($old_path, '/' . $last_seg . '/') !== false) {
+			$new_path = str_replace('/' . $last_seg . '/', $mapped, $old_path);
+		} elseif (preg_match('#/' . preg_quote($last_seg, '/') . '(?=/|$)#', $old_path)) {
+			$new_path = preg_replace('#/' . preg_quote($last_seg, '/') . '(?=/|$)#', $mapped, $old_path);
+		}
+	}
 	
 	if ($new_path === $old_path) {
 		return $url;
