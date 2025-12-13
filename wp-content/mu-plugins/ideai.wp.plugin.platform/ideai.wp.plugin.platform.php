@@ -15,6 +15,21 @@ if (!defined('ABSPATH')) {
 const VERSION = '0.1.0';
 
 /**
+ * Feature flags (per-network).
+ *
+ * IMPORTANT: Keep defaults safe (disabled).
+ */
+const FLAG_NESTED_TREE_ENABLED = 'ideai_nested_tree_enabled';
+const FLAG_NESTED_TREE_COLLISION_MODE = 'ideai_nested_tree_collision_mode';
+
+function flag_defaults() {
+	return array(
+		FLAG_NESTED_TREE_ENABLED => false,
+		FLAG_NESTED_TREE_COLLISION_MODE => 'strict',
+	);
+}
+
+/**
  * Returns true when debug logging is enabled for the platform layer.
  *
  * Enable by setting:
@@ -55,6 +70,10 @@ function log_msg($message, array $context = array()) {
  * @return mixed
  */
 function get_flag($key, $default = null, $network_id = null) {
+	$defaults = flag_defaults();
+	if ($default === null && array_key_exists($key, $defaults)) {
+		$default = $defaults[$key];
+	}
 	if (function_exists('is_multisite') && is_multisite()) {
 		if ($network_id === null && function_exists('get_current_network_id')) {
 			$network_id = get_current_network_id();
@@ -82,6 +101,11 @@ function set_flag($key, $value, $network_id = null) {
 	}
 	return (bool) update_option($key, $value);
 }
+
+function nested_tree_enabled($network_id = null) {
+	return (bool) get_flag(FLAG_NESTED_TREE_ENABLED, false, $network_id);
+}
+
 
 /**
  * True if the platform MU-plugin is loaded.

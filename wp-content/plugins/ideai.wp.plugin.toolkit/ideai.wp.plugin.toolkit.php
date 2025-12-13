@@ -26,6 +26,41 @@ function get_platform_flag($key, $default = null) {
 	return \Ideai\Wp\Platform\get_flag($key, $default);
 }
 
+function set_platform_flag($key, $value) {
+	if (!platform_available()) {
+		return false;
+	}
+	return (bool) \Ideai\Wp\Platform\set_flag($key, $value);
+}
+
+function maybe_handle_network_post() {
+	if (!is_multisite() || !is_network_admin()) {
+		return;
+	}
+	if (!current_user_can('manage_network_options')) {
+		return;
+	}
+	if (empty($_POST['ideai_action']) || (string) $_POST['ideai_action'] !== 'save_flags') {
+		return;
+	}
+	check_admin_referer('ideai_save_flags');
+
+	$enabled = !empty($_POST['ideai_nested_tree_enabled']);
+	$mode = isset($_POST['ideai_nested_tree_collision_mode']) ? sanitize_text_field(wp_unslash($_POST['ideai_nested_tree_collision_mode'])) : 'strict';
+	if ($mode !== 'strict') {
+		$mode = 'strict';
+	}
+
+	$ok = true;
+	$ok = $ok && set_platform_flag('ideai_nested_tree_enabled', $enabled);
+	$ok = $ok && set_platform_flag('ideai_nested_tree_collision_mode', $mode);
+
+	$base = network_admin_url('admin.php?page=' . rawurlencode(SLUG));
+	$q = $ok ? 'ideai_saved=1' : 'ideai_saved=0';
+	wp_safe_redirect($base . '&' . $q);
+	exit;
+}
+
 function register_network_menu() {
 	if (!is_multisite()) {
 		return;
@@ -54,6 +89,7 @@ function register_network_menu() {
 	);
 }
 add_action('network_admin_menu', __NAMESPACE__ . '\\register_network_menu');
+add_action('network_admin_init', __NAMESPACE__ . '\\maybe_handle_network_post');
 
 function register_site_menu() {
 	// Optional: provide a minimal Status page in non-network wp-admin too.
@@ -104,6 +140,45 @@ function render_status_page() {
 	}
 
 	echo '</tbody></table>';
+
+	if ($is_ms && is_network_admin()) {
+		if (isset($_GET['ideai_saved'])) {
+			$ok = (string) $_GET['ideai_saved'] === '1';
+			echo '<div class="notice ' . esc_attr($ok ? 'notice-success' : 'notice-error') . '"><p>' . esc_html($ok ? 'Saved.' : 'Could not save (platform MU-plugin missing?)') . '</p></div>';
+		}
+
+		echo '<h2>Feature flags (Network)</h2>';
+		if (!platform_available()) {
+			echo '<p><em>Install the MU-plugin <code>ideai.wp.plugin.platform</code> to enable feature flags.</em></p>';
+		} else {
+			$action = network_admin_url('edit.php?action=' . rawurlencode(SLUG));
+			echo '<form method="post" action="' . esc_url($action) . '" style="max-width: 900px; margin-top: 10px">';
+			wp_nonce_field('ideai_save_flags');
+			echo '<input type="hidden" name="ideai_action" value="save_flags" />';
+
+			echo '<table class="form-table" role="presentation"><tbody>';
+
+			echo '<tr>';
+			echo '<th scope="row">Nested tree multisite</th>';
+			echo '<td><label><input type="checkbox" name="ideai_nested_tree_enabled" value="1" ' . checked(!empty($flags['ideai_nested_tree_enabled']), true, false) . ' /> Enable nested tree routing (per-network)</label></td>';
+			echo '</tr>';
+
+			echo '<tr>';
+			echo '<th scope="row">Collision mode</th>';
+			echo '<td>';
+			echo '<select name="ideai_nested_tree_collision_mode">';
+			echo '<option value="strict"' . selected((string) $flags['ideai_nested_tree_collision_mode'], 'strict', false) . '>strict (block conflicts)</option>';
+			echo '</select>';
+			echo '<p class="description">Strict mode prevents creating a Page whose full path conflicts with a nested site path (and vice versa).</p>';
+			echo '</td>';
+			echo '</tr>';
+
+			echo '</tbody></table>';
+
+			submit_button('Save flags');
+			echo '</form>';
+		}
+	}
 
 	if (!platform_available()) {
 		echo '<p><strong>Note:</strong> Advanced routing features (nested tree multisite) require the MU-plugin <code>ideai.wp.plugin.platform</code>. Toolkit remains safe without it.</p>';
