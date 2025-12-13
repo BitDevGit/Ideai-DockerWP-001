@@ -252,7 +252,7 @@ function render_status_page() {
 
 	echo '<h2>Feature flags (Network)</h2>';
 
-	echo '<form method="post" action="' . esc_url(network_admin_url('admin.php?page=' . rawurlencode(MENU_SLUG_STATUS))) . '" style="max-width: 900px; margin-top: 10px">';
+	echo '<form method="post" action="" style="max-width: 900px; margin-top: 10px">';
 	wp_nonce_field('ideai_save_flags');
 	echo '<input type="hidden" name="ideai_action" value="save_flags" />';
 
