@@ -2,6 +2,18 @@
 
 Common issues and their solutions.
 
+This repo’s primary local stack is:
+
+```bash
+docker compose -f docker-compose.flexible.yml up -d
+```
+
+If you’re not sure what’s wrong, start with:
+
+```bash
+./scripts/dev/doctor.sh
+```
+
 ## Database Connection Errors
 
 ### Error: "Error establishing a database connection"
@@ -14,13 +26,13 @@ Common issues and their solutions.
 
 1. **Check database container status:**
    ```bash
-   docker-compose ps db
+   docker compose -f docker-compose.flexible.yml ps
    ```
 
 2. **Wait for database initialization:**
    ```bash
    # Database needs 30-60 seconds to initialize
-   docker-compose logs db | tail -20
+   docker compose -f docker-compose.flexible.yml logs db1 --tail=50
    ```
 
 3. **Verify environment variables:**
@@ -30,7 +42,7 @@ Common issues and their solutions.
 
 4. **Test database connection:**
    ```bash
-   docker-compose exec db mysql -u wordpress -p
+   docker compose -f docker-compose.flexible.yml exec db1 mariadb -uwordpress1 -p wordpress1
    ```
 
 5. **If using small instance (512MB RAM):**
@@ -43,7 +55,7 @@ Common issues and their solutions.
 
 **Check logs:**
 ```bash
-docker-compose logs <service-name>
+docker compose -f docker-compose.flexible.yml logs <service-name>
 ```
 
 **Common causes:**
@@ -60,7 +72,7 @@ sudo lsof -i :80
 docker system prune
 
 # Rebuild containers
-docker-compose up -d --build --force-recreate
+docker compose -f docker-compose.flexible.yml up -d --force-recreate
 ```
 
 ## Nginx Configuration Errors
@@ -69,12 +81,8 @@ docker-compose up -d --build --force-recreate
 
 **Solution:**
 ```bash
-# Remove duplicate config files
-rm nginx/conf.d/local.conf
-rm nginx/conf.d/._*.conf
-
 # Restart nginx
-docker-compose restart nginx
+docker compose -f docker-compose.flexible.yml restart nginx
 ```
 
 ## Memory Issues
@@ -136,13 +144,13 @@ docker-compose restart nginx
 **After installation:**
 ```bash
 # Check WordPress logs
-docker-compose logs wordpress
+docker compose -f docker-compose.flexible.yml logs wordpress3
 
 # Check file permissions
-docker-compose exec wordpress ls -la /var/www/html
+docker compose -f docker-compose.flexible.yml exec wordpress3 ls -la /var/www/html
 
 # Verify database connection
-docker-compose exec wordpress wp db check --allow-root
+docker compose -f docker-compose.flexible.yml exec wordpress3 wp db check --allow-root
 ```
 
 ## Docker Build Timeouts
@@ -169,10 +177,10 @@ build: ./wordpress
 docker stats
 
 # Database queries
-docker-compose exec wordpress wp db query "SHOW PROCESSLIST;" --allow-root
+docker compose -f docker-compose.flexible.yml exec wordpress3 wp db query "SHOW PROCESSLIST;" --allow-root
 
 # Nginx access logs
-docker-compose exec nginx tail -f /var/log/nginx/access.log
+docker compose -f docker-compose.flexible.yml exec nginx tail -f /var/log/nginx/access.log
 ```
 
 **Optimizations:**
@@ -183,9 +191,7 @@ docker-compose exec nginx tail -f /var/log/nginx/access.log
 
 ## Getting Help
 
-1. Check logs: `docker-compose logs`
-2. Review [Deployment Guide](../deployment/DEPLOYMENT.md)
-3. Check [Architecture Docs](../architecture/SCALING.md)
+1. Check logs: `docker compose -f docker-compose.flexible.yml logs`
 4. Open an issue on GitHub
 
 

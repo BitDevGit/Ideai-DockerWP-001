@@ -1,23 +1,24 @@
-# Database Migration Scripts
+# Database Migration (Domain/URL rewrite)
 
-Scripts for migrating WordPress database from local to AWS, including domain and serialized URL rewrites.
+These scripts help you migrate a WordPress database between environments by rewriting domains/URLs (including many serialized values).
+
+This repo’s **primary local setup** is the flexible stack (`docker-compose.flexible.yml`) with sites:
+- `site1.localwp` (service: `wordpress1`, db: `db1`)
+- `site2.localwp` (service: `wordpress2`, db: `db2`)
+- `site3.localwp` (service: `wordpress3`, db: `db3`)
 
 ## Scripts
 
-### migrate-db-to-aws.sh
+### `migrate-db-to-aws.sh`
 
 Main migration script that handles:
 - Domain replacement (localhost → AWS IP/domain)
 - Serialized URL rewrites
 - All WordPress tables
 
-**Usage:**
+**Usage (generic):**
 ```bash
-# From local environment
-./scripts/migration/migrate-db-to-aws.sh localhost 13.40.170.117
-
-# Or with domain
-./scripts/migration/migrate-db-to-aws.sh localhost yourdomain.com
+./scripts/migration/migrate-db-to-aws.sh <old-domain> <new-domain>
 ```
 
 **On AWS instance:**
@@ -30,60 +31,52 @@ cd /opt/wordpress-multisite
 ./scripts/migration/migrate-db-to-aws.sh localhost 13.40.170.117
 ```
 
-### migrate-serialized-urls.php
+### `migrate-serialized-urls.php`
 
 Advanced script for handling serialized data properly.
 
 **Usage:**
 ```bash
-# Via wp-cli
-docker-compose exec wordpress wp eval-file scripts/migration/migrate-serialized-urls.php
+# Via wp-cli (choose the WP container for the site you’re migrating)
+docker compose -f docker-compose.flexible.yml exec wordpress1 wp eval-file scripts/migration/migrate-serialized-urls.php --allow-root
 
 # Or set environment variables
-OLD_DOMAIN=localhost NEW_DOMAIN=13.40.170.117 \
-  docker-compose exec wordpress wp eval-file scripts/migration/migrate-serialized-urls.php
+OLD_DOMAIN=site1.localwp NEW_DOMAIN=example.com \
+  docker compose -f docker-compose.flexible.yml exec wordpress1 wp eval-file scripts/migration/migrate-serialized-urls.php --allow-root
 ```
 
 ## Migration Process
 
-### 1. Export Local Database
+### 1) Export database (local)
 
 ```bash
-# Export database
-docker-compose exec db mysqldump -u wordpress -p wordpress > local-db.sql
+# Using wp-cli (recommended)
+docker compose -f docker-compose.flexible.yml exec wordpress1 wp db export /tmp/local-db.sql --allow-root
 
-# Or using wp-cli
-docker-compose exec wordpress wp db export local-db.sql --allow-root
+# Copy it out of the container
+docker cp "$(docker compose -f docker-compose.flexible.yml ps -q wordpress1):/tmp/local-db.sql" ./local-db.sql
 ```
 
-### 2. Import to AWS
+### 2) Import database (target environment)
+
+Import steps depend on your target (AWS/Lightsail/EC2/etc). The essential part is:
+- import SQL into the target DB for that site
+- then run the domain rewrite scripts with `<old-domain> -> <new-domain>`
+
+### 3) Run migration script
 
 ```bash
-# Upload to AWS
-scp -i key.pem local-db.sql ubuntu@13.40.170.117:/tmp/
-
-# SSH and import
-ssh -i key.pem ubuntu@13.40.170.117
-cd /opt/wordpress-multisite
-docker-compose exec -T db mysql -u wordpress -p wordpress < /tmp/local-db.sql
+./scripts/migration/migrate-db-to-aws.sh <old-domain> <new-domain>
 ```
 
-### 3. Run Migration Script
-
-```bash
-# On AWS instance
-cd /opt/wordpress-multisite
-./scripts/migration/migrate-db-to-aws.sh localhost 13.40.170.117
-```
-
-### 4. Verify
+### 4) Verify
 
 ```bash
 # Check site URL
-docker-compose exec wordpress wp option get siteurl --allow-root
+docker compose -f docker-compose.flexible.yml exec wordpress1 wp option get siteurl --allow-root
 
 # Check home URL
-docker-compose exec wordpress wp option get home --allow-root
+docker compose -f docker-compose.flexible.yml exec wordpress1 wp option get home --allow-root
 ```
 
 ## What Gets Updated
@@ -111,7 +104,7 @@ For complex cases, use `migrate-serialized-urls.php` which properly unserializes
 
 1. Clear cache:
    ```bash
-   docker-compose exec wordpress wp cache flush --allow-root
+   docker compose -f docker-compose.flexible.yml exec wordpress1 wp cache flush --allow-root
    ```
 
 2. Check .htaccess:
@@ -121,14 +114,14 @@ For complex cases, use `migrate-serialized-urls.php` which properly unserializes
 
 3. Verify database:
    ```bash
-   docker-compose exec wordpress wp option get siteurl --allow-root
+   docker compose -f docker-compose.flexible.yml exec wordpress1 wp option get siteurl --allow-root
    ```
 
 ### Serialized data issues
 
 Use the PHP script for proper handling:
 ```bash
-docker-compose exec wordpress wp eval-file scripts/migration/migrate-serialized-urls.php
+docker compose -f docker-compose.flexible.yml exec wordpress1 wp eval-file scripts/migration/migrate-serialized-urls.php --allow-root
 ```
 
 ## Best Practices
