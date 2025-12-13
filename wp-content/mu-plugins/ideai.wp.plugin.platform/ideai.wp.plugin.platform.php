@@ -29,6 +29,8 @@ function flag_defaults() {
 	);
 }
 
+require_once __DIR__ . '/includes/nested-tree.php';
+
 /**
  * Returns true when debug logging is enabled for the platform layer.
  *
