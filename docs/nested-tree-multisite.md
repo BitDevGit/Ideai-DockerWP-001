@@ -14,13 +14,7 @@ This adds support for **hierarchical “sites within sites”** on WordPress **s
   - outbound URL rewriting (internal flat ⇄ external nested)
   - canonical redirect policy (avoid flattening / loops)
   - collision prevention (nested site paths vs Pages, strict mode)
-
-- **Plugin**: `ideai.wp.plugin.toolkit`
-  - IdeAI wp-admin menu
-  - Network Admin UI to create nested child sites
-  - Integrates into `wp-admin/network/site-new.php`
-
-Toolkit works without the MU-plugin; advanced nested-tree features require the MU-plugin.
+  - Network Admin UI (IdeAI menu + site creation flow)
 
 ## Enable (per-network)
 

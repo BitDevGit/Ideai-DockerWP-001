@@ -2,8 +2,7 @@
 
 Goal: Support **hierarchical nested multisite sites** (e.g. `/a/`, `/a/b/`, `/a/b/c/`) on **any** WordPress **subdirectory multisite network**, using:
 
-- MU plugin: `ideai.wp.plugin.platform` (safe, always-on platform behavior; feature-flagged per-network)
-- Plugin: `ideai.wp.plugin.toolkit` (IdeAI admin UI + tasks; works with or without MU plugin)
+- MU plugin: `ideai.wp.plugin.platform` (safe, always-on platform behavior **including Network Admin UI**; feature-flagged per-network)
 
 Constraints:
 - **Per-network** feature flags (stored via `get_network_option()` / `update_network_option()`).
@@ -18,8 +17,7 @@ Constraints:
 Create these labels in GitHub (see script below):
 
 ### Area
-- **area:platform**: MU-plugin (`ideai.wp.plugin.platform`) changes
-- **area:toolkit**: Plugin (`ideai.wp.plugin.toolkit`) changes
+- **area:platform**: MU-plugin (`ideai.wp.plugin.platform`) changes (includes IdeAI Network Admin UI)
 - **area:nginx**: nginx/mkcert/dev routing changes
 - **area:docs**: documentation-only
 - **area:tests**: scripts/tests/harness
@@ -113,23 +111,13 @@ I can generate a concrete `gh` script once you confirm labels/milestones you wan
   - MU plugin loads without errors on single site + multisite
   - No routing changes when flags are absent/off
 
-### 2) Add plugin skeleton: `ideai.wp.plugin.toolkit` + “IdeAI” admin menu
-- **Deliverable**: `wp-content/plugins/ideai.wp.plugin.toolkit/` with:
-  - IdeAI menu (Network Admin and/or Site Admin as appropriate)
-  - “Status” page showing:
-    - whether MU plugin is present
-    - current network flags
-- **Acceptance**:
-  - Activating plugin does not require MU plugin
-  - No fatal errors if MU plugin missing
-
-### 3) Define + implement per-network feature flags API
+### 2) Define + implement per-network feature flags API + Network Admin UI
 - **Deliverable**:
   - Flag keys + defaults:
     - `ideai_nested_tree_enabled` (default false)
     - `ideai_nested_tree_collision_mode` (default "strict")
-  - Toolkit UI to toggle flag(s) in Network Admin
-  - Platform reads them
+  - IdeAI Network Admin UI to toggle flag(s)
+  - Platform reads them (feature-flagged)
 - **Acceptance**:
   - Flags persist across requests
   - Flags are network-scoped, not site-scoped
@@ -189,9 +177,9 @@ I can generate a concrete `gh` script once you confirm labels/milestones you wan
 - **Acceptance**:
   - O(1)/O(log N) checks, no full scans per request
 
-### 9) Network Admin “Tree Editor” UI (Toolkit)
+### 9) Network Admin “Tree Editor” UI (Platform)
 - **Deliverable**:
-  - IdeAI → Sites page:
+  - IdeAI → Sites page (Network Admin):
     - shows tree of nested sites
     - create child site under selected parent (single slug)
     - delete node (with confirmation)

@@ -38,8 +38,7 @@ create_label () {
 }
 
 # Area
-create_label "area:platform" "5319E7" "MU-plugin ideai.wp.plugin.platform"
-create_label "area:toolkit"  "1D76DB" "Plugin ideai.wp.plugin.toolkit"
+create_label "area:platform" "5319E7" "MU-plugin ideai.wp.plugin.platform (includes IdeAI Network UI)"
 create_label "area:nginx"    "0E8A16" "nginx/mkcert/dev routing"
 create_label "area:docs"     "C5DEF5" "Documentation"
 create_label "area:tests"    "BFDADC" "Tests/scripts/harness"
@@ -95,13 +94,8 @@ create_issue \
   "$(tmpl)"
 
 create_issue \
-  "NestedTree: Toolkit plugin skeleton + IdeAI admin menu (ideai.wp.plugin.toolkit)" \
-  "type:feature,area:toolkit,risk:low,status:ready,scope:network-admin" \
-  "$(tmpl)"
-
-create_issue \
   "NestedTree: Per-network feature flags API + UI toggles" \
-  "type:feature,area:platform,area:toolkit,risk:low,status:ready" \
+  "type:feature,area:platform,risk:low,status:ready" \
   "$(tmpl)"
 
 create_issue \
@@ -126,12 +120,12 @@ create_issue \
 
 create_issue \
   "NestedTree: Collision prevention (nested sites vs Pages) — strict mode" \
-  "type:feature,area:platform,area:toolkit,risk:medium,status:ready,scope:collisions" \
+  "type:feature,area:platform,risk:medium,status:ready,scope:collisions" \
   "$(tmpl)"
 
 create_issue \
   "NestedTree: Network Admin Tree Editor + integrate into site-new.php" \
-  "type:feature,area:toolkit,risk:medium,status:ready,scope:network-admin" \
+  "type:feature,area:platform,risk:medium,status:ready,scope:network-admin" \
   "$(tmpl)"
 
 create_issue \
