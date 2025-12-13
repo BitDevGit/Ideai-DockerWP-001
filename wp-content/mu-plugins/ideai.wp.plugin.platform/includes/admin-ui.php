@@ -509,7 +509,7 @@ function render_site_new_integration() {
 			var childSlug = childInput.value.trim();
 			var nestedPath = parentPath + childSlug + "/";
 			
-			// Use just the child slug for WordPress field (we'll update to nested path after creation)
+			// Use just the child slug for WordPress field (we will update to nested path after creation)
 			// WordPress will create site with this, then we update to full nested path
 			wpSiteAddress.value = childSlug;
 		}
