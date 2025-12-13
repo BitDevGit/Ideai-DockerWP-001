@@ -78,7 +78,14 @@ function maybe_handle_save_flags() {
 	}
 	check_admin_referer('ideai_save_flags');
 
-	$network_id = function_exists('get_current_network_id') ? (int) get_current_network_id() : 0;
+	// Resolve network ID: get_current_network_id() can return 0/false, so fallback to 1 (main network).
+	$network_id = 0;
+	if (function_exists('get_current_network_id')) {
+		$network_id = (int) get_current_network_id();
+	}
+	if ($network_id <= 0) {
+		$network_id = 1; // Main network in multisite.
+	}
 
 	$enabled = !empty($_POST['ideai_nested_tree_enabled']);
 	$mode = isset($_POST['ideai_nested_tree_collision_mode']) ? sanitize_text_field(wp_unslash($_POST['ideai_nested_tree_collision_mode'])) : 'strict';
