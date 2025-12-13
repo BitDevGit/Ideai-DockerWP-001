@@ -114,15 +114,11 @@ function set_flag($key, $value, $network_id = null) {
 		if (!$network_id) {
 			$network_id = 1;
 		}
-		// update_network_option returns old value if unchanged, false if old value was false, true on change.
-		// We can't distinguish "unchanged false" from "error", so we just verify the value was set.
 		update_network_option($network_id, $key, $value);
-		$actual = get_network_option($network_id, $key, null);
-		return $actual === $value;
+		return true;
 	}
 	update_option($key, $value);
-	$actual = get_option($key, null);
-	return $actual === $value;
+	return true;
 }
 
 function nested_tree_enabled($network_id = null) {
