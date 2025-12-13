@@ -43,9 +43,8 @@ echo "Found blog_id: ${BLOG_ID}"
 docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp db query \
   "UPDATE wp_blogs SET path = '${FULL_PATH}' WHERE blog_id = ${BLOG_ID}" 2>/dev/null || true
 
-# Update nested tree mapping
+# Update nested tree mapping via WordPress
 docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp eval "
-require_once '/var/www/html/wp-content/mu-plugins/ideai.wp.plugin.platform/includes/nested-tree.php';
 if (function_exists('Ideai\Wp\Platform\NestedTree\upsert_blog_path')) {
     \Ideai\Wp\Platform\NestedTree\upsert_blog_path(${BLOG_ID}, '${FULL_PATH}', 1);
     echo 'Nested path mapping created\n';
