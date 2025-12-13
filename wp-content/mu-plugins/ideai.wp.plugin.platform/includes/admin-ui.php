@@ -92,9 +92,9 @@ function handle_save_flags() {
 		$mode = 'strict';
 	}
 
-	$ok = true;
-	$ok = $ok && Platform\set_flag(Platform\FLAG_NESTED_TREE_ENABLED, $enabled, $network_id);
-	$ok = $ok && Platform\set_flag(Platform\FLAG_NESTED_TREE_COLLISION_MODE, $mode, $network_id);
+	$ok1 = Platform\set_flag(Platform\FLAG_NESTED_TREE_ENABLED, $enabled, $network_id);
+	$ok2 = Platform\set_flag(Platform\FLAG_NESTED_TREE_COLLISION_MODE, $mode, $network_id);
+	$ok = $ok1 && $ok2;
 
 	$base = network_admin_url('admin.php?page=' . rawurlencode(MENU_SLUG_STATUS));
 	$q = $ok ? 'ideai_saved=1' : 'ideai_saved=0';
