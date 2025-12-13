@@ -165,6 +165,29 @@ function upsert_blog_path($blog_id, $path, $network_id = null) {
 		array('%d', '%d', '%s')
 	);
 
+	// CRITICAL: Always update wp_blogs.path to match the nested path
+	// WordPress uses this stored path for URL generation
+	if ($ok) {
+		if (function_exists('update_blog_details')) {
+			update_blog_details($blog_id, array('path' => $path));
+		}
+		// Direct database update as backup to ensure it's saved
+		global $wpdb;
+		$wpdb->update(
+			$wpdb->blogs,
+			array('path' => $path),
+			array('blog_id' => $blog_id),
+			array('%s'),
+			array('%d')
+		);
+		// Clear cache
+		if (function_exists('clean_blog_cache')) {
+			clean_blog_cache($blog_id);
+		}
+		wp_cache_delete($blog_id, 'blog-details');
+		wp_cache_delete($blog_id . 'short', 'blog-details');
+	}
+
 	wp_cache_delete(cache_key_blog_path($network_id, $blog_id), cache_group());
 	// Resolver cache is path-dependent; we avoid global flush and just let short TTL expire.
 
@@ -306,6 +329,46 @@ function list_mappings($network_id = null) {
 		);
 	}
 	return $out;
+}
+
+/**
+ * Sync all nested site paths to wp_blogs table.
+ * Ensures database path always matches nested path mapping.
+ *
+ * @param int|null $network_id
+ * @return int Number of sites synced
+ */
+function sync_all_blog_paths($network_id = null) {
+	if (!is_multisite()) {
+		return 0;
+	}
+	if ($network_id === null && function_exists('get_current_network_id')) {
+		$network_id = get_current_network_id();
+	}
+	if (!$network_id) {
+		return 0;
+	}
+
+	$network_id = (int) $network_id;
+	$mappings = list_mappings($network_id);
+	$synced = 0;
+
+	foreach ($mappings as $mapping) {
+		$blog_id = (int) $mapping['blog_id'];
+		$nested_path = normalize_path($mapping['path']);
+		
+		if ($blog_id > 0 && $nested_path !== '/') {
+			$site = function_exists('get_site') ? get_site($blog_id) : null;
+			if ($site && (!empty($site->path) && normalize_path($site->path) !== $nested_path)) {
+				if (function_exists('update_blog_details')) {
+					update_blog_details($blog_id, array('path' => $nested_path));
+					$synced++;
+				}
+			}
+		}
+	}
+
+	return $synced;
 }
 
 

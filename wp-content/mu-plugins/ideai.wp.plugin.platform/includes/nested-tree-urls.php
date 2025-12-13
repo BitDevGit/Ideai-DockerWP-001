@@ -105,24 +105,14 @@ function maybe_rewrite_for_blog($url, $blog_id) {
 	}
 
 	$old_path = $p['path'] ?? '';
-	$new_path = replace_path_prefix($old_path, $internal, $mapped);
 	
-	// If path still contains --, try direct replacement as fallback
-	if ($new_path === $old_path && strpos($old_path, '--') !== false) {
-		// Convert any -- segments in the path to /
-		$path_parts = explode('/', $old_path);
-		$converted_parts = array();
-		foreach ($path_parts as $part) {
-			if (strpos($part, '--') !== false) {
-				$converted_parts[] = str_replace('--', '/', $part);
-			} else {
-				$converted_parts[] = $part;
-			}
-		}
-		$new_path = implode('/', $converted_parts);
-		// Normalize the path
-		$new_path = preg_replace('#/+#', '/', $new_path);
+	// If internal and mapped are the same, no rewrite needed
+	if ($internal === $mapped) {
+		return $url;
 	}
+	
+	// Standard WordPress multisite: replace internal path with mapped nested path
+	$new_path = replace_path_prefix($old_path, $internal, $mapped);
 	
 	if ($new_path === $old_path) {
 		return $url;
