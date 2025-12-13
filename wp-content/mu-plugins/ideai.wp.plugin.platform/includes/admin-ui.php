@@ -87,7 +87,8 @@ function maybe_handle_save_flags() {
 		$network_id = 1; // Main network in multisite.
 	}
 
-	$enabled = !empty($_POST['ideai_nested_tree_enabled']);
+	// Checkbox: if present in POST and equals '1', it's enabled. If absent, it's disabled.
+	$enabled = isset($_POST['ideai_nested_tree_enabled']) && (string) $_POST['ideai_nested_tree_enabled'] === '1';
 	$mode = isset($_POST['ideai_nested_tree_collision_mode']) ? sanitize_text_field(wp_unslash($_POST['ideai_nested_tree_collision_mode'])) : 'strict';
 	if ($mode !== 'strict') {
 		$mode = 'strict';
