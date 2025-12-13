@@ -325,15 +325,6 @@ function render_site_new_integration() {
 		}
 		$nested_path = NestedTree\normalize_path($nested_path);
 		
-		// Ensure path uses / not -- (convert if needed)
-		if (strpos($nested_path, '--') !== false) {
-			$path_trimmed = trim($nested_path, '/');
-			$segments = explode('--', $path_trimmed);
-			$segments = array_filter($segments, function ($seg) { return $seg !== ''; });
-			$nested_path = '/' . implode('/', $segments) . '/';
-			$nested_path = NestedTree\normalize_path($nested_path);
-		}
-		
 		$label = $s->domain . $nested_path . ' (ID ' . $bid . ')';
 		$site_options[] = array(
 			'blog_id' => $bid,
@@ -431,8 +422,9 @@ function render_site_new_integration() {
 	
 	var previousSuggestedSlug = "";
 	
+	// normalizePath: safety net for old sites that might have -- in paths
+	// New sites should never have --, but this handles legacy data
 	function normalizePath(path) {
-		// Ensure path uses / not -- (convert if needed)
 		if (path && path.indexOf("--") !== -1) {
 			var segments = path.split("/").filter(function(s) { return s !== ""; });
 			var normalized = [];
