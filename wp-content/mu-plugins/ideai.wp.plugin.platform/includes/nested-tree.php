@@ -126,6 +126,31 @@ function upsert_blog_path($blog_id, $path, $network_id = null) {
 	$network_id = (int) $network_id;
 	$path = normalize_path($path);
 
+	// Strict collision prevention: do not allow creating a nested site at a path that
+	// already exists as a Page path in the network's main site.
+	$collision_mode = \Ideai\Wp\Platform\get_flag(\Ideai\Wp\Platform\FLAG_NESTED_TREE_COLLISION_MODE, 'strict', $network_id);
+	if ($collision_mode === 'strict' && function_exists('get_network')) {
+		$net = get_network($network_id);
+		if ($net && !empty($net->site_id) && function_exists('switch_to_blog') && function_exists('get_page_by_path')) {
+			$main_blog_id = (int) $net->site_id;
+			$relative = trim($path, '/');
+			// If relative is empty, it's the root; ignore.
+			if ($relative !== '') {
+				switch_to_blog($main_blog_id);
+				$page = get_page_by_path($relative, OBJECT, 'page');
+				restore_current_blog();
+				if ($page && !empty($page->ID)) {
+					log_msg('nested_tree collision: page exists', array(
+						'network_id' => $network_id,
+						'path' => $path,
+						'page_id' => (int) $page->ID,
+					));
+					return false;
+				}
+			}
+		}
+	}
+
 	// Upsert via delete+insert to keep compatibility across DB versions.
 	$wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE network_id=%d AND blog_id=%d", $network_id, $blog_id));
 	$wpdb->query($wpdb->prepare("DELETE FROM {$table} WHERE network_id=%d AND path=%s", $network_id, $path));
