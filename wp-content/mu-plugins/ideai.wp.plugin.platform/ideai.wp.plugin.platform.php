@@ -84,7 +84,11 @@ function get_flag($key, $default = null, $network_id = null) {
 	if (function_exists('is_multisite') && is_multisite()) {
 		// Treat null/0/false as "current network".
 		if ((!$network_id) && function_exists('get_current_network_id')) {
-			$network_id = get_current_network_id();
+			$network_id = (int) get_current_network_id();
+		}
+		// Fallback to network 1 (main network) if still 0/false.
+		if (!$network_id) {
+			$network_id = 1;
 		}
 		// get_network_option handles null network id in modern WP, but we keep it explicit.
 		return get_network_option($network_id, $key, $default);
@@ -104,7 +108,11 @@ function set_flag($key, $value, $network_id = null) {
 	if (function_exists('is_multisite') && is_multisite()) {
 		// Treat null/0/false as "current network".
 		if ((!$network_id) && function_exists('get_current_network_id')) {
-			$network_id = get_current_network_id();
+			$network_id = (int) get_current_network_id();
+		}
+		// Fallback to network 1 (main network) if still 0/false.
+		if (!$network_id) {
+			$network_id = 1;
 		}
 		return (bool) update_network_option($network_id, $key, $value);
 	}
