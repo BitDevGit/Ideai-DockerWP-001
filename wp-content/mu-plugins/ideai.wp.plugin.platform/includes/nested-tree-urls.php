@@ -1,9 +1,10 @@
 <?php
 /**
- * Nested tree multisite: outbound URL rewriting (flat ⇄ nested).
+ * Nested tree multisite: outbound URL rewriting (safety net only).
  *
- * When enabled, WordPress may generate URLs using an internal "flat" site path.
- * We rewrite those URLs to the registered nested path for that blog.
+ * Since we store nested paths directly in wp_blogs.path, WordPress should generate
+ * correct URLs automatically. This file is kept as a safety net for edge cases.
+ * If wp_blogs.path is correct, these filters should rarely (if ever) fire.
  */
 
 namespace Ideai\Wp\Platform\NestedTreeUrls;
@@ -105,24 +106,15 @@ function maybe_rewrite_for_blog($url, $blog_id) {
 	}
 
 	$old_path = $p['path'] ?? '';
-	$new_path = replace_path_prefix($old_path, $internal, $mapped);
 	
-	// If path still contains --, try direct replacement as fallback
-	if ($new_path === $old_path && strpos($old_path, '--') !== false) {
-		// Convert any -- segments in the path to /
-		$path_parts = explode('/', $old_path);
-		$converted_parts = array();
-		foreach ($path_parts as $part) {
-			if (strpos($part, '--') !== false) {
-				$converted_parts[] = str_replace('--', '/', $part);
-			} else {
-				$converted_parts[] = $part;
-			}
-		}
-		$new_path = implode('/', $converted_parts);
-		// Normalize the path
-		$new_path = preg_replace('#/+#', '/', $new_path);
+	// If internal path (from wp_blogs.path) matches mapped path (from our table), no rewrite needed
+	// This should be the case now that we store nested paths directly in wp_blogs.path
+	if ($internal === $mapped) {
+		return $url;
 	}
+	
+	// Safety net: only rewrite if paths don't match (shouldn't happen if DB is synced correctly)
+	$new_path = replace_path_prefix($old_path, $internal, $mapped);
 	
 	if ($new_path === $old_path) {
 		return $url;
