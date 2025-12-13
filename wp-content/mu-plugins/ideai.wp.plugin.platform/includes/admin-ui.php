@@ -66,15 +66,12 @@ function register_network_menu() {
 }
 add_action('network_admin_menu', __NAMESPACE__ . '\\register_network_menu');
 
-function maybe_handle_save_flags() {
+function handle_save_flags() {
 	if (!should_load_network_ui()) {
-		return;
+		wp_die('Network admin only.');
 	}
 	if (!current_user_can('manage_network_options')) {
-		return;
-	}
-	if (empty($_POST['ideai_action']) || (string) $_POST['ideai_action'] !== 'save_flags') {
-		return;
+		wp_die('Insufficient permissions.');
 	}
 	check_admin_referer('ideai_save_flags');
 
@@ -103,7 +100,7 @@ function maybe_handle_save_flags() {
 	wp_safe_redirect($base . '&' . $q);
 	exit;
 }
-add_action('network_admin_init', __NAMESPACE__ . '\\maybe_handle_save_flags');
+add_action('admin_post_ideai_save_flags', __NAMESPACE__ . '\\handle_save_flags');
 
 function sanitize_child_slug($slug) {
 	$slug = strtolower((string) $slug);
@@ -252,9 +249,9 @@ function render_status_page() {
 
 	echo '<h2>Feature flags (Network)</h2>';
 
-	echo '<form method="post" action="" style="max-width: 900px; margin-top: 10px">';
+	echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="max-width: 900px; margin-top: 10px">';
 	wp_nonce_field('ideai_save_flags');
-	echo '<input type="hidden" name="ideai_action" value="save_flags" />';
+	echo '<input type="hidden" name="action" value="ideai_save_flags" />';
 
 	echo '<table class="form-table" role="presentation"><tbody>';
 
