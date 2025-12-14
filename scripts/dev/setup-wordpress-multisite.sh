@@ -95,3 +95,4 @@ echo "   Create Site: https://site3.localwp/wp-admin/network/site-new.php"
 echo "   IdeAI Status: https://site3.localwp/wp-admin/network/admin.php?page=ideai-status"
 echo ""
 
+

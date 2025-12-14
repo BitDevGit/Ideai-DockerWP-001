@@ -47,3 +47,4 @@ echo ""
 echo "✅ Installation process complete"
 echo "   Check: https://site3.localwp/wp-admin/"
 
+

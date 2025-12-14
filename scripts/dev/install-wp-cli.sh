@@ -21,3 +21,4 @@ echo ""
 echo "✅ wp-cli installation attempted"
 echo "   Test: docker-compose -f docker-compose.flexible.yml exec wordpress3 wp --info"
 
+

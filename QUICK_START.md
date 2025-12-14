@@ -71,3 +71,4 @@ docker-compose -f docker-compose.flexible.yml ps
 docker-compose -f docker-compose.flexible.yml logs wordpress3 | tail -20
 ```
 
+

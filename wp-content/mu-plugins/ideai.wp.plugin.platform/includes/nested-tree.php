@@ -308,4 +308,55 @@ function list_mappings($network_id = null) {
 	return $out;
 }
 
+/**
+ * Recursively build tree structure with proper hierarchy.
+ *
+ * @param array<int,array{blog_id:int,path:string}> $mappings
+ * @return array{blog_id:int|null,path:string,children:array}
+ */
+function build_hierarchical_tree($mappings) {
+	$root = array(
+		'blog_id' => null,
+		'path' => '/',
+		'children' => array(),
+	);
+	
+	// Sort by path length (shallowest first) to build tree correctly
+	usort($mappings, function($a, $b) {
+		$len_a = strlen($a['path']);
+		$len_b = strlen($b['path']);
+		if ($len_a === $len_b) {
+			return strcmp($a['path'], $b['path']);
+		}
+		return $len_a - $len_b;
+	});
+	
+	foreach ($mappings as $mapping) {
+		$path = normalize_path($mapping['path']);
+		$segments = array_filter(explode('/', trim($path, '/')));
+		
+		$current = &$root;
+		$current_path = '/';
+		
+		foreach ($segments as $segment) {
+			$current_path = normalize_path($current_path . $segment . '/');
+			
+			if (!isset($current['children'][$current_path])) {
+				$current['children'][$current_path] = array(
+					'blog_id' => null,
+					'path' => $current_path,
+					'children' => array(),
+				);
+			}
+			
+			$current = &$current['children'][$current_path];
+		}
+		
+		// Set blog_id on the final node
+		$current['blog_id'] = $mapping['blog_id'];
+	}
+	
+	return $root;
+}
+
 

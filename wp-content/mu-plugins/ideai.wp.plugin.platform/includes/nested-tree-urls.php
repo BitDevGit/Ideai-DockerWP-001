@@ -170,7 +170,20 @@ function filter_site_url($url, $path, $scheme, $blog_id) {
 add_filter('site_url', __NAMESPACE__ . '\\filter_site_url', 20, 4);
 
 // admin_url: third arg is blog_id.
+// NOTE: This runs AFTER nested-tree-routing.php's fix_admin_url (priority 1)
+// So we only need to handle edge cases that the primary filter missed
 function filter_admin_url($url, $path, $blog_id) {
+	// Check if URL was already fixed by nested-tree-routing.php
+	// If it contains a nested path, skip rewriting
+	$network_id = get_current_network_id();
+	if (Platform\nested_tree_enabled($network_id)) {
+		$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
+		$nested_path = NestedTree\get_blog_path($target_blog_id, $network_id);
+		if ($nested_path && strpos($url, $nested_path) !== false) {
+			// Already fixed by primary filter
+			return $url;
+		}
+	}
 	return maybe_rewrite_for_blog($url, $blog_id);
 }
 add_filter('admin_url', __NAMESPACE__ . '\\filter_admin_url', 20, 3);

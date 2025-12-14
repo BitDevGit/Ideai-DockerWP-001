@@ -74,3 +74,4 @@ PHP test that verifies:
 ✅ HTTP requests return 200/302 (not 404)  
 ✅ Admin URLs point to correct nested site  
 
+

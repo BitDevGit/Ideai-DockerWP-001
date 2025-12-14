@@ -122,3 +122,4 @@ docker-compose -f docker-compose.flexible.yml exec wordpress3 php tests/test-nes
 - URLs generate correctly
 - Minimal code, maximum reliability
 
+

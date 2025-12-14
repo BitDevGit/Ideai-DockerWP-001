@@ -259,6 +259,11 @@ function handle_wpmu_new_blog($blog_id, $user_id, $domain, $path, $site_id, $met
 	
 	// Save nested path mapping (for routing)
 	NestedTree\upsert_blog_path((int) $blog_id, $nested_path, $network_id);
+
+	// Setup homepage with level information (scheduled to run after site is fully created)
+	if (function_exists('Ideai\Wp\Platform\NestedTree\setup_homepage_with_level')) {
+		wp_schedule_single_event(time() + 1, 'ideai_setup_homepage', array($blog_id));
+	}
 }
 add_action('wpmu_new_blog', __NAMESPACE__ . '\\handle_wpmu_new_blog', 5, 6);
 
@@ -644,6 +649,69 @@ function render_status_page() {
 	echo '</div>';
 }
 
+/**
+ * Render tree node recursively.
+ *
+ * @param array $node
+ * @param int   $depth
+ * @return string
+ */
+function render_tree_node($node, $depth = 0) {
+	$path = $node['path'];
+	$blog_id = $node['blog_id'];
+	$children = $node['children'] ?? array();
+	
+	$indent = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;', $depth);
+	$has_children = !empty($children);
+	$is_site = $blog_id !== null;
+	
+	$html = '<div class="ideai-tree-node" style="margin: 4px 0; padding: 4px 0; border-left: 2px solid #ddd; padding-left: 12px;">';
+	
+	// Path display
+	$path_display = $path === '/' ? '<strong>Root</strong>' : '<code>' . esc_html($path) . '</code>';
+	$html .= '<div style="display: flex; align-items: center; gap: 8px;">';
+	$html .= '<span style="color: #666; font-size: 11px;">' . $indent . '</span>';
+	
+	if ($has_children) {
+		$html .= '<span class="ideai-tree-toggle" data-path="' . esc_attr($path) . '" style="cursor: pointer; user-select: none; font-weight: bold; color: #2271b1;">▼</span>';
+	} else {
+		$html .= '<span style="display: inline-block; width: 16px;"></span>';
+	}
+	
+	$html .= '<span>' . $path_display . '</span>';
+	
+	if ($is_site) {
+		$site = get_site($blog_id);
+		$site_name = $site ? $site->blogname : 'Site ' . $blog_id;
+		$site_url = $site ? get_home_url($blog_id) : '';
+		$admin_url = network_admin_url('site-info.php?id=' . $blog_id);
+		
+		$html .= '<span style="margin-left: 12px; color: #2271b1;">';
+		$html .= '<a href="' . esc_url($admin_url) . '" title="' . esc_attr($site_name) . '">Blog ' . esc_html((string) $blog_id) . '</a>';
+		if ($site_url) {
+			$html .= ' | <a href="' . esc_url($site_url) . '" target="_blank">View</a>';
+		}
+		$html .= '</span>';
+	}
+	
+	$html .= '</div>';
+	
+	// Children (initially hidden, toggled by JS)
+	if ($has_children) {
+		$html .= '<div class="ideai-tree-children" data-parent="' . esc_attr($path) . '" style="display: none; margin-left: 20px;">';
+		// Sort children by path for consistent display
+		uksort($children, 'strcmp');
+		foreach ($children as $child) {
+			$html .= render_tree_node($child, $depth + 1);
+		}
+		$html .= '</div>';
+	}
+	
+	$html .= '</div>';
+	
+	return $html;
+}
+
 function render_sites_page() {
 	if (!should_load_network_ui()) {
 		wp_die('Network admin only.');
@@ -655,24 +723,73 @@ function render_sites_page() {
 	$network_id = function_exists('get_current_network_id') ? (int) get_current_network_id() : 0;
 
 	echo '<div class="wrap">';
-	echo '<h1>IdeAI → Sites</h1>';
+	echo '<h1>IdeAI → Site Tree</h1>';
+	echo '<p>Complete hierarchy of all nested sites. Click ▼ to expand/collapse branches.</p>';
 
-	echo '<p>Registered nested-site paths (per-network):</p>';
 	$rows = NestedTree\list_mappings($network_id);
 	if (empty($rows)) {
 		echo '<p><em>No nested sites registered yet.</em></p>';
 	} else {
-		echo '<table class="widefat striped" style="max-width: 900px"><thead><tr><th>Path</th><th>Blog</th></tr></thead><tbody>';
-		foreach ($rows as $r) {
-			$bid = (int) $r['blog_id'];
-			$path = (string) $r['path'];
-			$link = network_admin_url('site-info.php?id=' . $bid);
-			echo '<tr><td><code>' . esc_html($path) . '</code></td><td><a href="' . esc_url($link) . '">Blog ID ' . esc_html((string) $bid) . '</a></td></tr>';
+		// Build hierarchical tree
+		$tree = NestedTree\build_hierarchical_tree($rows);
+		
+		// Add main site (blog_id 1) to root if it exists
+		$main_site = get_site(1);
+		if ($main_site) {
+			$tree['blog_id'] = 1;
 		}
-		echo '</tbody></table>';
+		
+		echo '<div id="ideai-site-tree" style="background: #fff; padding: 20px; border: 1px solid #ccd0d4; border-radius: 4px; max-width: 1200px; margin: 20px 0;">';
+		echo render_tree_node($tree);
+		echo '</div>';
+		
+		// Add JavaScript for tree toggling
+		?>
+		<script>
+		(function() {
+			document.addEventListener('DOMContentLoaded', function() {
+				const toggles = document.querySelectorAll('.ideai-tree-toggle');
+				toggles.forEach(function(toggle) {
+					toggle.addEventListener('click', function() {
+						const path = this.getAttribute('data-path');
+						const children = document.querySelector('.ideai-tree-children[data-parent="' + path + '"]');
+						if (children) {
+							const isHidden = children.style.display === 'none';
+							children.style.display = isHidden ? 'block' : 'none';
+							this.textContent = isHidden ? '▲' : '▼';
+						}
+					});
+				});
+				
+				// Auto-expand first level
+				const firstLevel = document.querySelectorAll('.ideai-tree-children[data-parent="/"]');
+				firstLevel.forEach(function(el) {
+					el.style.display = 'block';
+					const toggle = document.querySelector('.ideai-tree-toggle[data-path="/"]');
+					if (toggle) toggle.textContent = '▲';
+				});
+			});
+		})();
+		</script>
+		<?php
+		
+		// Summary stats
+		$total_sites = count($rows) + 1; // +1 for main site
+		$max_depth = 0;
+		foreach ($rows as $r) {
+			$depth = substr_count(rtrim($r['path'], '/'), '/');
+			$max_depth = max($max_depth, $depth);
+		}
+		
+		echo '<div style="margin-top: 20px; padding: 12px; background: #f0f0f1; border-radius: 4px; max-width: 1200px;">';
+		echo '<strong>Summary:</strong> ';
+		echo $total_sites . ' total sites, ';
+		echo count($rows) . ' nested sites, ';
+		echo 'max depth: ' . $max_depth . ' levels';
+		echo '</div>';
 	}
 
-	echo '<h2 style="margin-top: 24px">Create nested child site</h2>';
+	echo '<h2 style="margin-top: 32px">Create nested child site</h2>';
 	echo '<p>Use <a class="button button-primary" href="' . esc_url(network_admin_url('site-new.php')) . '">Add New Site</a> and the IdeAI block on that page.</p>';
 
 	echo '</div>';

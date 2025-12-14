@@ -78,3 +78,4 @@ curl_check "https://${HOST}/smoke1/site/smoke2/wp-admin/"
 echo "✅ Smoke test complete."
 
 
+

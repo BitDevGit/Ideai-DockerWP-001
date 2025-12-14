@@ -145,3 +145,4 @@ docker-compose -f docker-compose.flexible.yml logs wordpress3 | tail -20
 
 **Next Action:** Complete WordPress installation via browser at `https://site3.localwp/wp-admin/install.php`
 
+

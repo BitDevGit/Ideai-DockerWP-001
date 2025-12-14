@@ -106,3 +106,4 @@ echo "    - https://site3.localwp/parent2/"
 echo ""
 echo "🔐 Admin credentials: admin / admin"
 
+

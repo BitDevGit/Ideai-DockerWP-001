@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site3 Nested Sites Dashboard</title>
+    <meta http-equiv="X-Frame-Options" content="ALLOWALL">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .dashboard-header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-header h1 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .site-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .site-selector label {
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .site-selector select {
+            padding: 8px 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .site-selector select:hover {
+            border-color: #0073aa;
+        }
+        
+        .stats {
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .sites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .site-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .site-card-header {
+            padding: 15px;
+            background: #0073aa;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .site-card-header .path {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .site-iframe-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .site-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            transform: scale(0.5);
+            transform-origin: top left;
+            width: 200%;
+            height: 200%;
+        }
+        
+        .loading {
+            padding: 40px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .error {
+            padding: 20px;
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+        
+        .hierarchy-indent {
+            margin-left: 20px;
+            border-left: 2px solid #ddd;
+            padding-left: 15px;
+        }
+        
+        .level-1 { }
+        .level-2 { margin-left: 20px; }
+        .level-3 { margin-left: 40px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1>🌳 Site3 Nested Sites Dashboard</h1>
+        <div class="site-selector">
+            <label for="site-select">Select Site:</label>
+            <select id="site-select" onchange="loadSites()">
+                <option value="1">Site 1</option>
+                <option value="2">Site 2</option>
+                <option value="3" selected>Site 3</option>
+            </select>
+        </div>
+        <div class="stats" id="stats">
+            <span>Loading sites...</span>
+        </div>
+    </div>
+    
+    <div class="sites-grid" id="sites-grid">
+        <div class="loading">Loading sites...</div>
+    </div>
+
+    <script>
+        const SITE_BASE_URL = {
+            1: 'https://site1.localwp',
+            2: 'https://site2.localwp',
+            3: 'https://site3.localwp'
+        };
+
+        async function loadSites() {
+            const siteNum = document.getElementById('site-select').value;
+            const baseUrl = SITE_BASE_URL[siteNum];
+            const grid = document.getElementById('sites-grid');
+            const stats = document.getElementById('stats');
+            
+            grid.innerHTML = '<div class="loading">Loading sites...</div>';
+            stats.innerHTML = '<span>Loading...</span>';
+            
+            // For site3, use hardcoded data immediately (more reliable)
+            if (siteNum === '3') {
+                try {
+                    const sites = await getHardcodedSites(siteNum);
+                    renderSites(sites, baseUrl, grid, stats);
+                    return;
+                } catch (error) {
+                    console.error('Error loading hardcoded sites:', error);
+                }
+            }
+            
+            try {
+                // Fetch nested sites from our custom API endpoint
+                let sites = [];
+                const apiUrl = `${baseUrl}/wp-content/mu-plugins/ideai.wp.plugin.platform/includes/nested-sites-api.php?network_id=1`;
+                
+                try {
+                    const sitesResponse = await fetch(apiUrl, {
+                        mode: 'cors',
+                        cache: 'no-cache'
+                    });
+                    
+                    if (sitesResponse.ok) {
+                        const data = await sitesResponse.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            sites = data;
+                        } else {
+                            throw new Error('API returned empty array');
+                        }
+                    } else {
+                        throw new Error(`API returned ${sitesResponse.status}`);
+                    }
+                } catch (apiError) {
+                    console.warn('API fetch failed, using hardcoded fallback:', apiError);
+                    // Fallback: use hardcoded list
+                    if (siteNum === '3') {
+                        sites = await getHardcodedSites(siteNum);
+                    } else {
+                        grid.innerHTML = '<div class="error">API not available for this site. Please use Site 3.</div>';
+                        stats.innerHTML = '<span>Error: Site not available</span>';
+                        return;
+                    }
+                }
+                
+                renderSites(sites, baseUrl, grid, stats);
+                
+            } catch (error) {
+                console.error('Error loading sites:', error);
+                grid.innerHTML = `<div class="error">Error loading sites: ${error.message}</div>`;
+                stats.innerHTML = '<span>Error loading sites</span>';
+            }
+        }
+        
+        function renderSites(sites, baseUrl, grid, stats) {
+            if (sites.length === 0) {
+                grid.innerHTML = '<div class="error">No sites found</div>';
+                stats.innerHTML = '<span>No sites found</span>';
+                return;
+            }
+            
+            // Group sites by hierarchy
+            const grouped = groupByHierarchy(sites);
+            
+            // Display stats
+            stats.innerHTML = `
+                <span><strong>${sites.length}</strong> total sites</span>
+                <span><strong>${grouped.level1}</strong> parent sites</span>
+                <span><strong>${grouped.level2}</strong> child sites</span>
+                <span><strong>${grouped.level3}</strong> grandchild sites</span>
+            `;
+            
+            // Render sites - sorted by path to show hierarchy
+            grid.innerHTML = '';
+            sites.sort((a, b) => a.path.localeCompare(b.path));
+            
+            // Group by parent for better organization
+            const parentGroups = {};
+            sites.forEach(site => {
+                const parts = site.path.split('/').filter(p => p);
+                const parent = parts.length > 0 ? parts[0] : 'root';
+                if (!parentGroups[parent]) {
+                    parentGroups[parent] = [];
+                }
+                parentGroups[parent].push(site);
+            });
+            
+            // Render each parent group
+            Object.keys(parentGroups).sort().forEach(parent => {
+                parentGroups[parent].forEach(site => {
+                    const card = createSiteCard(site, baseUrl);
+                    grid.appendChild(card);
+                });
+            });
+        }
+        
+        async function getHardcodedSites(siteNum) {
+            // Hardcoded list for site3 (fallback if API fails)
+            if (siteNum !== '3') {
+                return [];
+            }
+            // All 33 sites on site3
+            return [
+                { blog_id: 2, path: '/parent1/', name: 'Parent 1 (Level 1)', level: 1 },
+                { blog_id: 24, path: '/parent1/child1/', name: 'Parent 1 → Child 1 (Level 2)', level: 2 },
+                { blog_id: 4, path: '/parent1/child1/grandchild1/', name: 'Parent 1 → Child 1 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 5, path: '/parent1/child1/grandchild2/', name: 'Parent 1 → Child 1 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 25, path: '/parent1/child2/', name: 'Parent 1 → Child 2 (Level 2)', level: 2 },
+                { blog_id: 6, path: '/parent1/child2/grandchild1/', name: 'Parent 1 → Child 2 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 7, path: '/parent1/child2/grandchild2/', name: 'Parent 1 → Child 2 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 34, path: '/parent1/child3/', name: 'Parent 1 → Child 3 (Level 2)', level: 2 },
+                { blog_id: 3, path: '/parent1/testbrowser/', name: 'Parent 1 → Testbrowser (Level 2)', level: 2 },
+                { blog_id: 26, path: '/parent2/child1/', name: 'Parent 2 → Child 1 (Level 2)', level: 2 },
+                { blog_id: 8, path: '/parent2/child1/grandchild1/', name: 'Parent 2 → Child 1 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 9, path: '/parent2/child1/grandchild2/', name: 'Parent 2 → Child 1 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 27, path: '/parent2/child2/', name: 'Parent 2 → Child 2 (Level 2)', level: 2 },
+                { blog_id: 10, path: '/parent2/child2/grandchild1/', name: 'Parent 2 → Child 2 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 11, path: '/parent2/child2/grandchild2/', name: 'Parent 2 → Child 2 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 28, path: '/parent3/child1/', name: 'Parent 3 → Child 1 (Level 2)', level: 2 },
+                { blog_id: 12, path: '/parent3/child1/grandchild1/', name: 'Parent 3 → Child 1 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 13, path: '/parent3/child1/grandchild2/', name: 'Parent 3 → Child 1 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 29, path: '/parent3/child2/', name: 'Parent 3 → Child 2 (Level 2)', level: 2 },
+                { blog_id: 14, path: '/parent3/child2/grandchild1/', name: 'Parent 3 → Child 2 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 15, path: '/parent3/child2/grandchild2/', name: 'Parent 3 → Child 2 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 30, path: '/parent4/child1/', name: 'Parent 4 → Child 1 (Level 2)', level: 2 },
+                { blog_id: 16, path: '/parent4/child1/grandchild1/', name: 'Parent 4 → Child 1 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 17, path: '/parent4/child1/grandchild2/', name: 'Parent 4 → Child 1 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 31, path: '/parent4/child2/', name: 'Parent 4 → Child 2 (Level 2)', level: 2 },
+                { blog_id: 18, path: '/parent4/child2/grandchild1/', name: 'Parent 4 → Child 2 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 19, path: '/parent4/child2/grandchild2/', name: 'Parent 4 → Child 2 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 32, path: '/parent5/child1/', name: 'Parent 5 → Child 1 (Level 2)', level: 2 },
+                { blog_id: 20, path: '/parent5/child1/grandchild1/', name: 'Parent 5 → Child 1 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 21, path: '/parent5/child1/grandchild2/', name: 'Parent 5 → Child 1 → Grandchild 2 (Level 3)', level: 3 },
+                { blog_id: 33, path: '/parent5/child2/', name: 'Parent 5 → Child 2 (Level 2)', level: 2 },
+                { blog_id: 22, path: '/parent5/child2/grandchild1/', name: 'Parent 5 → Child 2 → Grandchild 1 (Level 3)', level: 3 },
+                { blog_id: 23, path: '/parent5/child2/grandchild2/', name: 'Parent 5 → Child 2 → Grandchild 2 (Level 3)', level: 3 }
+            ];
+        }
+        
+        function groupByHierarchy(sites) {
+            return {
+                level1: sites.filter(s => s.level === 1).length,
+                level2: sites.filter(s => s.level === 2).length,
+                level3: sites.filter(s => s.level === 3).length
+            };
+        }
+        
+        function groupSitesByParent(sites) {
+            const grouped = {};
+            sites.forEach(site => {
+                // Extract parent path (e.g., /parent1/ from /parent1/child1/)
+                const parts = site.path.split('/').filter(p => p);
+                let parentPath = '/';
+                if (parts.length > 0) {
+                    parentPath = '/' + parts[0] + '/';
+                }
+                if (!grouped[parentPath]) {
+                    grouped[parentPath] = [];
+                }
+                grouped[parentPath].push(site);
+            });
+            return grouped;
+        }
+        
+        function createSiteCard(site, baseUrl) {
+            const card = document.createElement('div');
+            card.className = `site-card level-${site.level}`;
+            
+            const url = `${baseUrl}${site.path}`;
+            const levelBadge = site.level === 1 ? '🏠' : site.level === 2 ? '📁' : '📄';
+            
+            const containerId = `iframe-container-${site.blog_id}`;
+            const iframeId = `iframe-${site.blog_id}`;
+            
+            card.innerHTML = `
+                <div class="site-card-header">
+                    <div>${levelBadge} ${site.name}</div>
+                    <div class="path">${site.path} (blog_id: ${site.blog_id})</div>
+                </div>
+                <div class="site-iframe-container" id="${containerId}">
+                    <div class="iframe-loading">Loading ${site.path}...</div>
+                    <iframe 
+                        id="${iframeId}"
+                        class="site-iframe" 
+                        src="${url}" 
+                        title="${site.name}"
+                        loading="lazy"
+                        allow="same-origin"
+                        onload="handleIframeLoad('${iframeId}', '${containerId}')"
+                        onerror="handleIframeError('${containerId}', '${url}')"
+                    ></iframe>
+                </div>
+            `;
+            
+            // Set timeout to show error if iframe doesn't load
+            setTimeout(() => {
+                const iframe = document.getElementById(iframeId);
+                if (iframe && !iframe.contentWindow) {
+                    handleIframeError(containerId, url);
+                }
+            }, 10000);
+            
+            return card;
+        }
+        
+        function handleIframeLoad(iframeId, containerId) {
+            const container = document.getElementById(containerId);
+            const loading = container.querySelector('.iframe-loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function handleIframeError(containerId, url) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="iframe-error">
+                        <p><strong>⚠️ Could not load iframe</strong></p>
+                        <p style="font-size: 12px; margin-top: 10px;">
+                            <a href="${url}" target="_blank" style="color: #0073aa;">Open in new tab →</a>
+                        </p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Load sites on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSites();
+        });
+    </script>
+</body>
+</html>
+

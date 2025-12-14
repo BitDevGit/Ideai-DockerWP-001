@@ -40,3 +40,4 @@ That means: one or more path segments ending in `/`.
 - PHP handling must be via the `location ~ \.php$` fastcgi block.
 
 
+

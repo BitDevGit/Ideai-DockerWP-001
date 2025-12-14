@@ -118,3 +118,4 @@ function prevent_publish_collision($new_status, $old_status, $post) {
 add_action('transition_post_status', __NAMESPACE__ . '\\prevent_publish_collision', 10, 3);
 
 
+

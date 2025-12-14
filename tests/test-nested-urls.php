@@ -95,3 +95,4 @@ echo "Results: {$passed} passed, {$failed} failed\n";
 
 exit($failed > 0 ? 1 : 0);
 
+

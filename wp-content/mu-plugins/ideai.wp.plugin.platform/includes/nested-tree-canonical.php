@@ -124,3 +124,4 @@ function filter_redirect_canonical($redirect_url, $requested_url) {
 add_filter('redirect_canonical', __NAMESPACE__ . '\\filter_redirect_canonical', 20, 2);
 
 
+
