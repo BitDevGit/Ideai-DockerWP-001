@@ -1,15 +1,17 @@
-# IdeAI Docker WordPress (Local Dev + AWS-aligned)
+# IdeAI Docker WordPress - Local Development Environment
 
-This repo is a clean starting point for a **local WordPress dev environment** that mirrors production patterns:
+A powerful local WordPress development environment supporting all types of WordPress installations, including advanced nested multisite structures.
 
-- **3 separate WordPress installs** + **3 separate MariaDB databases**
+## Features
+
+- **3 Separate WordPress Installations** with independent databases
 - **Shared `wp-content/`** (themes + plugins) across all sites
-- **Separate uploads per top-level site**
+- **Separate uploads** per top-level site
 - **HTTPS-only locally** (HTTP redirects to HTTPS)
-- A local dashboard at **`https://localhost`**
-- Optional **nested “sub-sub” multisite sites** for subdirectory multisite via the IdeAI MU-plugin
+- **Local dashboard** at `https://localhost`
+- **Nested Tree Multisite** - Support for deeply nested subdirectory multisite sites (e.g., `/parent/child/grandchild/`)
 
-## Quick start (local)
+## Quick Start
 
 ```bash
 # 1) Add /etc/hosts entries for .localwp domains (requires sudo)
@@ -25,29 +27,117 @@ docker compose -f docker-compose.flexible.yml up -d
 Open:
 - **Dashboard**: `https://localhost`
 - **Site 1 (single site)**: `https://site1.localwp`
-- **Site 2 (subdomain multisite demo)**: `https://site2.localwp`
-- **Site 3 (subdirectory multisite demo)**: `https://site3.localwp`
+- **Site 2 (subdomain multisite)**: `https://site2.localwp`
+- **Site 3 (subdirectory multisite with nested tree)**: `https://site3.localwp`
 
 If anything is off, run:
-
 ```bash
 ./scripts/dev/doctor.sh
 ```
 
-## Nested tree multisite (sub-sub sites)
+## Nested Tree Multisite
 
-Site 3 can run subdirectory multisite like:
-- `/sub1/`
-- `/sub1/subsub1/`
+Site 3 supports **nested subdirectory multisite** - allowing sites to be nested within other sites:
 
-This is enabled per-network in **Network Admin → IdeAI → Status** (feature flag).
+- `/parent1/` - Level 1 (Parent)
+- `/parent1/child1/` - Level 2 (Child)
+- `/parent1/child1/grandchild1/` - Level 3 (Grandchild)
+- And deeper levels as needed...
 
-Docs:
-- `docs/nested-tree-multisite.md`
-- `docs/nginx-nested-tree-subdir-multisite.md`
+### Features
 
-## What to read next
+- **Unlimited nesting depth** - Create parent → child → grandchild → great-grandchild structures
+- **Sovereign sites** - Each nested site has its own content, admin, and identity
+- **Canonical URLs** - Proper routing and URL generation for all nested levels
+- **Visual tree viewer** - Network Admin → IdeAI → Sites Tree shows the complete hierarchy
+- **Site creation UI** - Network Admin → IdeAI → Create Nested Site
 
-- **Local dev guide**: `docs/LOCAL_DEV.md`
-- **Troubleshooting**: `docs/troubleshooting/TROUBLESHOOTING.md`
+### Enabling Nested Tree
 
+1. Go to **Network Admin → IdeAI → Status**
+2. Enable "Nested Tree" feature flag for the network
+3. Start creating nested sites!
+
+### Documentation
+
+- `docs/nested-tree-multisite.md` - Complete nested tree documentation
+- `docs/nginx-nested-tree-subdir-multisite.md` - Nginx configuration details
+
+## Architecture
+
+### Sites
+
+- **Site 1**: Single WordPress site
+- **Site 2**: Subdomain multisite (e.g., `sub1.site2.localwp`)
+- **Site 3**: Subdirectory multisite with nested tree support (e.g., `/parent1/child1/`)
+
+### Docker Containers
+
+- `wordpress1`, `wordpress2`, `wordpress3` - WordPress containers
+- `mariadb1`, `mariadb2`, `mariadb3` - Database containers
+- `nginx` - Reverse proxy with HTTPS
+- `redis` - Object cache (optional)
+
+### File Structure
+
+```
+wp-content/
+├── mu-plugins/
+│   └── ideai.wp.plugin.platform/  # Nested tree multisite platform
+├── plugins/                       # Shared plugins
+├── themes/                        # Shared themes
+└── _usefultools/                  # Utility scripts for site management
+```
+
+## Network Admin Features
+
+Access via **Network Admin → IdeAI**:
+
+- **Status** - Platform status and feature flags
+- **Sites** - Complete site tree with expand/collapse
+- **Sites Tree** - Visual pyramid view of nested sites
+- **Create Nested Site** - UI for creating new nested sites
+
+## Development
+
+### Creating Nested Sites
+
+**Via UI:**
+1. Network Admin → IdeAI → Create Nested Site
+2. Enter parent path, site name, and options
+3. Site is created with homepage and sample content
+
+**Via Script:**
+```bash
+docker-compose -f docker-compose.flexible.yml exec wordpress3 wp --allow-root eval-file /var/www/html/wp-content/_usefultools/create-perfect-nested-structure.php
+```
+
+### Utility Scripts
+
+Located in `wp-content/_usefultools/`:
+
+- `create-perfect-nested-structure.php` - Create 3x3x3 nested structure
+- `create-missing-grandchildren.php` - Ensure all children have 3 grandchildren
+- `fix-site-options-urls.php` - Fix siteurl and home options
+- `update-all-homepages.php` - Update all site homepages
+
+See `wp-content/_usefultools/README.md` for details.
+
+## Troubleshooting
+
+```bash
+# Check system health
+./scripts/dev/doctor.sh
+
+# Reset databases
+./scripts/dev/reset-databases.sh
+
+# Quick reset
+./scripts/dev/quick-reset.sh
+```
+
+See `docs/troubleshooting/TROUBLESHOOTING.md` for more help.
+
+## License
+
+This is a development environment for IdeAI WordPress projects.

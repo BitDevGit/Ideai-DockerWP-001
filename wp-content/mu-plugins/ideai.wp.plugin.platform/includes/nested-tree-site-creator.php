@@ -44,16 +44,16 @@ function init() {
 		return;
 	}
 	
-	add_action('network_admin_menu', __NAMESPACE__ . '\\add_menu_page');
+	add_action('network_admin_menu', __NAMESPACE__ . '\\add_menu_page', 20);
 	add_action('admin_post_ideai_create_nested_site', __NAMESPACE__ . '\\handle_create_site');
 }
 
 /**
- * Add admin menu page
+ * Add admin menu page to IdeAI menu
  */
 function add_menu_page() {
 	add_submenu_page(
-		'sites.php',
+		\Ideai\Wp\Platform\AdminUI\MENU_SLUG_STATUS,
 		PAGE_TITLE,
 		MENU_TITLE,
 		'manage_sites',
@@ -80,7 +80,7 @@ function handle_create_site() {
 		wp_redirect(add_query_arg(array(
 			'page' => MENU_SLUG,
 			'error' => 'site_name_required'
-		), network_admin_url('sites.php')));
+		), network_admin_url('admin.php')));
 		exit;
 	}
 	
@@ -96,7 +96,7 @@ function handle_create_site() {
 			'page' => MENU_SLUG,
 			'error' => 'site_exists',
 			'path' => urlencode($nested_path)
-		), network_admin_url('sites.php')));
+		), network_admin_url('admin.php')));
 		exit;
 	}
 	
@@ -115,7 +115,7 @@ function handle_create_site() {
 			'page' => MENU_SLUG,
 			'error' => 'create_failed',
 			'message' => urlencode($result->get_error_message())
-		), network_admin_url('sites.php')));
+		), network_admin_url('admin.php')));
 		exit;
 	}
 	
@@ -169,7 +169,7 @@ function handle_create_site() {
 		'success' => '1',
 		'blog_id' => $blog_id,
 		'path' => urlencode($nested_path)
-	), network_admin_url('sites.php')));
+	), network_admin_url('admin.php')));
 	exit;
 }
 

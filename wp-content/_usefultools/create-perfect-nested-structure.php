@@ -45,6 +45,8 @@ echo str_repeat("=", 60) . "\n\n";
 
 // Configuration
 $parent_count = 3; // Create 3 parent sites
+$children_per_parent = 3; // 3 children per parent
+$grandchildren_per_child = 3; // 3 grandchildren per child
 $parents = [];
 
 // Step 1: Create Parent Sites (Level 1)
@@ -120,12 +122,13 @@ for ($i = 1; $i <= $parent_count; $i++) {
 
 echo "\n";
 
-// Step 2: Create Child Sites (Level 2) - Child1 and Child2 for each parent
+// Step 2: Create Child Sites (Level 2) - 3 children per parent
 echo "📁 Step 2: Creating Child Sites (Level 2)\n";
 $children = [];
 
 foreach ($parents as $parent_num => $parent_blog_id) {
-    foreach (['child1', 'child2'] as $child_name) {
+    for ($child_num = 1; $child_num <= $children_per_parent; $child_num++) {
+        $child_name = "child{$child_num}";
         $child_path = "/parent{$parent_num}/{$child_name}/";
         
         // Check if site already exists
@@ -198,12 +201,13 @@ foreach ($parents as $parent_num => $parent_blog_id) {
 
 echo "\n";
 
-// Step 3: Create Grandchild Sites (Level 3) - One grandchild for each child
+// Step 3: Create Grandchild Sites (Level 3) - 3 grandchildren per child
 echo "📁 Step 3: Creating Grandchild Sites (Level 3)\n";
 
 foreach ($children as $parent_num => $parent_children) {
     foreach ($parent_children as $child_name => $child_blog_id) {
-        $grandchild_path = "/parent{$parent_num}/{$child_name}/grandchild1/";
+        for ($grandchild_num = 1; $grandchild_num <= $grandchildren_per_child; $grandchild_num++) {
+            $grandchild_path = "/parent{$parent_num}/{$child_name}/grandchild{$grandchild_num}/";
         
         // Check if site already exists
         $existing = NestedTree\resolve_blog_for_request_path($grandchild_path, $network_id);
@@ -212,62 +216,70 @@ foreach ($children as $parent_num => $parent_children) {
             continue;
         }
         
-        // Create grandchild site
-        $result = wp_insert_site(array(
-            'domain' => get_network()->domain,
-            'path' => $grandchild_path,
-            'title' => "Parent $parent_num → " . ucfirst($child_name) . " → Grandchild 1",
-            'user_id' => 1,
-            'network_id' => $network_id,
-            'public' => 1,
-        ));
-        
-        if (is_wp_error($result)) {
-            echo "  ❌ Failed to create {$grandchild_path}: " . $result->get_error_message() . "\n";
-            continue;
-        }
-        
-        $blog_id = $result;
-        
-        // Register nested path in database
-        global $wpdb;
-        $nested_table = NestedTree\table_name();
-        $wpdb->replace(
-            $nested_table,
-            array(
-                'blog_id' => $blog_id,
-                'network_id' => $network_id,
+            // Check if site already exists
+            $existing = NestedTree\resolve_blog_for_request_path($grandchild_path, $network_id);
+            if ($existing && !empty($existing['blog_id'])) {
+                echo "  ⚠️  {$grandchild_path} already exists (blog_id: {$existing['blog_id']})\n";
+                continue;
+            }
+            
+            // Create grandchild site
+            $result = wp_insert_site(array(
+                'domain' => get_network()->domain,
                 'path' => $grandchild_path,
-            ),
-            array('%d', '%d', '%s')
-        );
-        
-        // Set up site
-        switch_to_blog($blog_id);
-        
-        // Update site name
-        update_option('blogname', "Parent $parent_num → " . ucfirst($child_name) . " → Grandchild 1 (Level 3)");
-        
-        // Set up homepage
-        Ideai\Wp\Platform\NestedTree\setup_homepage_with_level($blog_id);
-        
-        // Create sample post
-        $post_title = "Parent $parent_num → " . ucfirst($child_name) . " → Grandchild 1 - Sample Post";
-        $post_id = wp_insert_post(array(
-            'post_title' => $post_title,
-            'post_content' => "This is a sample post for Parent $parent_num → " . ucfirst($child_name) . " → Grandchild 1.\n\nThis post confirms that the database is saving content correctly for this blog.\n\nBlog ID: $blog_id\nPath: $grandchild_path\nLevel: 3\nParent: Parent $parent_num → " . ucfirst($child_name),
-            'post_status' => 'publish',
-            'post_type' => 'post',
-            'post_author' => 1,
-        ));
-        
-        if ($post_id) {
-            echo "  ✅ Created {$grandchild_path} (blog_id: $blog_id, post_id: $post_id)\n";
-        } else {
-            echo "  ⚠️  Created {$grandchild_path} (blog_id: $blog_id) but post creation failed\n";
+                'title' => "Parent $parent_num → " . ucfirst($child_name) . " → Grandchild $grandchild_num",
+                'user_id' => 1,
+                'network_id' => $network_id,
+                'public' => 1,
+            ));
+            
+            if (is_wp_error($result)) {
+                echo "  ❌ Failed to create {$grandchild_path}: " . $result->get_error_message() . "\n";
+                continue;
+            }
+            
+            $blog_id = $result;
+            
+            // Register nested path in database
+            global $wpdb;
+            $nested_table = NestedTree\table_name();
+            $wpdb->replace(
+                $nested_table,
+                array(
+                    'blog_id' => $blog_id,
+                    'network_id' => $network_id,
+                    'path' => $grandchild_path,
+                ),
+                array('%d', '%d', '%s')
+            );
+            
+            // Set up site
+            switch_to_blog($blog_id);
+            
+            // Update site name
+            update_option('blogname', "Parent $parent_num → " . ucfirst($child_name) . " → Grandchild $grandchild_num (Level 3)");
+            
+            // Set up homepage
+            Ideai\Wp\Platform\NestedTree\setup_homepage_with_level($blog_id);
+            
+            // Create sample post
+            $post_title = "Parent $parent_num → " . ucfirst($child_name) . " → Grandchild $grandchild_num - Sample Post";
+            $post_id = wp_insert_post(array(
+                'post_title' => $post_title,
+                'post_content' => "This is a sample post for Parent $parent_num → " . ucfirst($child_name) . " → Grandchild $grandchild_num.\n\nThis post confirms that the database is saving content correctly for this blog.\n\nBlog ID: $blog_id\nPath: $grandchild_path\nLevel: 3\nParent: Parent $parent_num → " . ucfirst($child_name),
+                'post_status' => 'publish',
+                'post_type' => 'post',
+                'post_author' => 1,
+            ));
+            
+            if ($post_id) {
+                echo "  ✅ Created {$grandchild_path} (blog_id: $blog_id, post_id: $post_id)\n";
+            } else {
+                echo "  ⚠️  Created {$grandchild_path} (blog_id: $blog_id) but post creation failed\n";
+            }
+            
+            restore_current_blog();
         }
-        
-        restore_current_blog();
     }
 }
 
@@ -317,9 +329,9 @@ echo "✅ Perfect Nested Structure Created!\n\n";
 
 echo "Structure Summary:\n";
 echo "- Level 1 (Parents): " . count($parents) . " sites\n";
-echo "- Level 2 (Children): " . (count($parents) * 2) . " sites\n";
-echo "- Level 3 (Grandchildren): " . (count($parents) * 2) . " sites\n";
-echo "- Total: " . (count($parents) * 5) . " sites\n\n";
+echo "- Level 2 (Children): " . (count($parents) * $children_per_parent) . " sites\n";
+echo "- Level 3 (Grandchildren): " . (count($parents) * $children_per_parent * $grandchildren_per_child) . " sites\n";
+echo "- Total: " . (count($parents) * (1 + $children_per_parent + ($children_per_parent * $grandchildren_per_child))) . " sites\n\n";
 
 echo "All sites have:\n";
 echo "- ✅ Correct nested paths\n";
@@ -330,10 +342,13 @@ echo "- ✅ Correct siteurl and home options\n\n";
 echo "Test URLs:\n";
 foreach ($parents as $parent_num => $blog_id) {
     echo "  Parent $parent_num: https://site3.localwp/parent{$parent_num}/\n";
-    foreach (['child1', 'child2'] as $child_name) {
+    for ($child_num = 1; $child_num <= $children_per_parent; $child_num++) {
+        $child_name = "child{$child_num}";
         if (isset($children[$parent_num][$child_name])) {
             echo "    → {$child_name}: https://site3.localwp/parent{$parent_num}/{$child_name}/\n";
-            echo "      → grandchild1: https://site3.localwp/parent{$parent_num}/{$child_name}/grandchild1/\n";
+            for ($grandchild_num = 1; $grandchild_num <= $grandchildren_per_child; $grandchild_num++) {
+                echo "      → grandchild{$grandchild_num}: https://site3.localwp/parent{$parent_num}/{$child_name}/grandchild{$grandchild_num}/\n";
+            }
         }
     }
 }
