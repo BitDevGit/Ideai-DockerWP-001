@@ -83,8 +83,8 @@ function pre_get_site_by_path($site, $domain, $path, $segments) {
 		$wp_site = function_exists('get_site') ? get_site($blog_id) : null;
 		
 		if ($wp_site) {
-			// Log override if WordPress resolved to different site
-			if ($site && is_object($site) && isset($site->blog_id) && (int) $site->blog_id !== $blog_id) {
+			// Log override if WordPress resolved to different site (debug only)
+			if (Platform\is_debug_enabled() && $site && is_object($site) && isset($site->blog_id) && (int) $site->blog_id !== $blog_id) {
 				error_log(sprintf(
 					'[NESTED_TREE] Overriding: wp=%d -> nested=%d for %s',
 					(int) $site->blog_id,
@@ -335,12 +335,15 @@ function force_correct_blog() {
 		$current_blog_id = get_current_blog_id();
 		
 		if ($target_blog_id !== $current_blog_id) {
-			error_log(sprintf(
-				'[NESTED_TREE] Force switching: current=%d -> target=%d for %s',
-				$current_blog_id,
-				$target_blog_id,
-				$normalized
-			));
+			// Debug logging only
+			if (Platform\is_debug_enabled()) {
+				error_log(sprintf(
+					'[NESTED_TREE] Force switching: current=%d -> target=%d for %s',
+					$current_blog_id,
+					$target_blog_id,
+					$normalized
+				));
+			}
 			switch_to_blog($target_blog_id);
 		}
 	}
