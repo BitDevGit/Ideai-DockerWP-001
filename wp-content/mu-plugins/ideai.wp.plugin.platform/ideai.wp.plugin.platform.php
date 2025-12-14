@@ -38,6 +38,7 @@ require_once __DIR__ . '/includes/nested-tree-homepage.php';
 require_once __DIR__ . '/includes/admin-ui.php';
 require_once __DIR__ . '/includes/nested-tree-site-creator.php';
 require_once __DIR__ . '/includes/nested-tree-viewer.php';
+require_once __DIR__ . '/includes/nested-tree-sitemap.php';
 
 /**
  * Returns true when debug logging is enabled for the platform layer.
