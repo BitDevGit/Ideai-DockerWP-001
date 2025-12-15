@@ -121,8 +121,7 @@ function filter_redirect_canonical($redirect_url, $requested_url) {
 	return $redirect_url;
 }
 
-// TEMPORARILY DISABLED - causing redirect loops
-// add_filter('redirect_canonical', __NAMESPACE__ . '\\filter_redirect_canonical', 20, 2);
+add_filter('redirect_canonical', __NAMESPACE__ . '\\filter_redirect_canonical', 20, 2);
 
 
 

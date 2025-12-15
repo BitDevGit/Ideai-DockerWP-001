@@ -161,15 +161,13 @@ function maybe_rewrite_for_blog($url, $blog_id) {
 function filter_home_url($url, $path, $orig_scheme, $blog_id) {
 	return maybe_rewrite_for_blog($url, $blog_id);
 }
-// TEMPORARILY DISABLED - causing redirect loops
-// add_filter('home_url', __NAMESPACE__ . '\\filter_home_url', 20, 4);
+add_filter('home_url', __NAMESPACE__ . '\\filter_home_url', 20, 4);
 
 // site_url filter provides $blog_id as 4th argument.
 function filter_site_url($url, $path, $scheme, $blog_id) {
 	return maybe_rewrite_for_blog($url, $blog_id);
 }
-// TEMPORARILY DISABLED - causing redirect loops
-// add_filter('site_url', __NAMESPACE__ . '\\filter_site_url', 20, 4);
+add_filter('site_url', __NAMESPACE__ . '\\filter_site_url', 20, 4);
 
 // admin_url: third arg is blog_id.
 // NOTE: This runs AFTER nested-tree-routing.php's fix_admin_url (priority 1)
@@ -188,8 +186,7 @@ function filter_admin_url($url, $path, $blog_id) {
 	}
 	return maybe_rewrite_for_blog($url, $blog_id);
 }
-// TEMPORARILY DISABLED - causing redirect loops
-// add_filter('admin_url', __NAMESPACE__ . '\\filter_admin_url', 20, 3);
+add_filter('admin_url', __NAMESPACE__ . '\\filter_admin_url', 20, 3);
 
 // wp_login_url doesn't provide blog_id; use current blog.
 function filter_login_url($login_url, $redirect, $force_reauth) {

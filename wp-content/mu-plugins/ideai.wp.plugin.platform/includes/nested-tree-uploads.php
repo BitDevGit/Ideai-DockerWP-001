@@ -46,11 +46,8 @@ function init() {
  * Ensure upload directory exists when switching to a blog
  */
 function ensure_upload_directory($new_blog_id, $prev_blog_id) {
-	// Switch to the blog to get correct upload directory
-	switch_to_blog($new_blog_id);
 	$upload_dir = wp_upload_dir(null, false);
 	$basedir = $upload_dir['basedir'];
-	restore_current_blog();
 	
 	// Create base directory if it doesn't exist
 	if (!file_exists($basedir)) {
@@ -105,17 +102,6 @@ function fix_upload_directory($uploads) {
 	$expected_basedir = WP_CONTENT_DIR . '/uploads/sites/' . $blog_id;
 	$expected_baseurl = content_url('uploads/sites/' . $blog_id);
 	
-	// Debug logging (only if debug enabled)
-	if (Platform\is_debug_enabled()) {
-		$original_basedir = $uploads['basedir'] ?? 'not set';
-		error_log(sprintf(
-			'[NESTED_TREE_UPLOADS] fix_upload_directory: blog_id=%d, original=%s, expected=%s',
-			$blog_id,
-			$original_basedir,
-			$expected_basedir
-		));
-	}
-	
 	// Check if WordPress is using wrong path (root uploads instead of site-specific)
 	$wrong_path = WP_CONTENT_DIR . '/uploads';
 	if (strpos($uploads['basedir'], $wrong_path) === 0 && strpos($uploads['basedir'], '/sites/') === false) {
@@ -124,8 +110,7 @@ function fix_upload_directory($uploads) {
 		$uploads['baseurl'] = $expected_baseurl;
 	}
 	
-	// CRITICAL: Always force the correct path - don't let WordPress use root uploads
-	// This prevents files from being saved to both locations
+	// Always rebuild path and URL with correct base
 	$uploads['basedir'] = $expected_basedir;
 	$uploads['baseurl'] = $expected_baseurl;
 	
@@ -136,18 +121,6 @@ function fix_upload_directory($uploads) {
 	} else {
 		$uploads['path'] = $expected_basedir;
 		$uploads['url'] = $expected_baseurl;
-	}
-	
-	// Ensure we're not using root uploads path at all
-	$root_uploads_path = WP_CONTENT_DIR . '/uploads';
-	if (strpos($uploads['path'], $root_uploads_path) === 0 && strpos($uploads['path'], '/sites/') === false) {
-		// Force fix even if WordPress tried to use root path
-		$uploads['path'] = str_replace($root_uploads_path, $expected_basedir, $uploads['path']);
-		$uploads['url'] = str_replace(content_url('uploads'), $expected_baseurl, $uploads['url']);
-		
-		if (Platform\is_debug_enabled()) {
-			error_log(sprintf('[NESTED_TREE_UPLOADS] Forced path fix: %s -> %s', $uploads['path'], $expected_basedir));
-		}
 	}
 	
 	// Ensure directory exists with proper permissions and ownership
@@ -221,35 +194,15 @@ function ensure_upload_dir_before_upload($file) {
 	$blog_id = get_current_blog_id();
 	if ($blog_id > 1) {
 		$upload_dir = wp_upload_dir();
-		
-		// Debug logging
-		if (Platform\is_debug_enabled()) {
-			error_log(sprintf(
-				'[NESTED_TREE_UPLOADS] ensure_upload_dir_before_upload: blog_id=%d, path=%s, exists=%s, writable=%s',
-				$blog_id,
-				$upload_dir['path'],
-				file_exists($upload_dir['path']) ? 'yes' : 'no',
-				is_writable($upload_dir['path']) ? 'yes' : 'no'
-			));
-		}
-		
 		// Force ensure directory exists and is writable
 		if (!file_exists($upload_dir['path'])) {
 			wp_mkdir_p($upload_dir['path']);
 			@chmod($upload_dir['path'], 0755);
 			@chown($upload_dir['path'], 'www-data');
-			
-			if (Platform\is_debug_enabled()) {
-				error_log(sprintf('[NESTED_TREE_UPLOADS] Created upload directory: %s', $upload_dir['path']));
-			}
 		}
 		if (!is_writable($upload_dir['path'])) {
 			@chmod($upload_dir['path'], 0755);
 			@chown($upload_dir['path'], 'www-data');
-			
-			if (Platform\is_debug_enabled()) {
-				error_log(sprintf('[NESTED_TREE_UPLOADS] Fixed permissions for: %s', $upload_dir['path']));
-			}
 		}
 	}
 	return $file;

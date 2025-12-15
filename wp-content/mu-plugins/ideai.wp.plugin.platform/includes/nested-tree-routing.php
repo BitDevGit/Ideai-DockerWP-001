@@ -102,8 +102,8 @@ function pre_get_site_by_path($site, $domain, $path, $segments) {
 	return $site;
 }
 
-// TEMPORARILY DISABLED - causing redirect loops
-// add_filter('pre_get_site_by_path', __NAMESPACE__ . '\\pre_get_site_by_path', 1, 4);
+// Priority 1 ensures we run VERY early, before WordPress core resolution
+add_filter('pre_get_site_by_path', __NAMESPACE__ . '\\pre_get_site_by_path', 1, 4);
 
 /**
  * Allow iframe embedding for nested sites (for dashboard)
@@ -125,19 +125,7 @@ function allow_iframe_embedding() {
 	// Also remove via filter
 	add_filter('send_frame_options_header', '__return_false', 10, 0);
 }
-// TEMPORARILY DISABLED - may be causing issues
-// add_action('init', __NAMESPACE__ . '\\allow_iframe_embedding', 1);
-
-/**
- * Force WordPress to recognize nested admin URLs as admin requests
- * TEMPORARILY DISABLED - causing critical errors
- */
-function force_admin_detection_for_nested_paths() {
-	// TEMPORARILY DISABLED
-	return;
-}
-// TEMPORARILY DISABLED
-// add_action('plugins_loaded', __NAMESPACE__ . '\\force_admin_detection_for_nested_paths', 1);
+add_action('init', __NAMESPACE__ . '\\allow_iframe_embedding', 1);
 
 /**
  * Fix admin URLs to use nested paths instead of wp_blogs.path
@@ -154,40 +142,23 @@ function force_admin_detection_for_nested_paths() {
  * - $blog_id: The blog_id used (null if not provided, then WordPress uses current)
  */
 function fix_admin_url($url, $path, $blog_id) {
-	// CRITICAL: Always skip root site to prevent redirect loops
-	$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
-	if ($target_blog_id <= 1) {
-		return $url; // Never modify root site URLs
-	}
-	
-	// CRITICAL: Skip network admin - never modify network admin URLs
-	if (strpos($path, 'network/') === 0 || strpos($path, '/network/') !== false) {
-		return $url;
-	}
-	
-	// CRITICAL: Prevent infinite loops - check if we're already processing this URL
-	static $processing = array();
-	$cache_key = $target_blog_id . '|' . $path;
-	if (isset($processing[$cache_key])) {
-		return $url; // Already processing, return original to prevent loop
-	}
-	$processing[$cache_key] = true;
-	
 	if (!is_multisite() || !is_subdirectory_multisite()) {
-		unset($processing[$cache_key]);
 		return $url;
 	}
 	
 	$network_id = get_current_network_id();
 	if (!Platform\nested_tree_enabled($network_id)) {
-		unset($processing[$cache_key]);
 		return $url;
 	}
 	
+	// CRITICAL: Determine the target blog_id
+	// If blog_id is provided in the filter, use it
+	// Otherwise, WordPress used get_current_blog_id() when generating the URL
+	$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
+	
 	// Only fix URLs for nested sites
 	$nested_path = NestedTree\get_blog_path($target_blog_id, $network_id);
-	if (!$nested_path || $nested_path === '/') {
-		unset($processing[$cache_key]);
+	if (!$nested_path) {
 		return $url;
 	}
 	
@@ -244,22 +215,10 @@ function fix_admin_url($url, $path, $blog_id) {
 		$fixed_url .= '#' . $parsed['fragment'];
 	}
 	
-	// Debug logging
-	if (Platform\is_debug_enabled()) {
-		error_log(sprintf(
-			'[NESTED_TREE] fix_admin_url: blog_id=%d, path=%s, original=%s, fixed=%s',
-			$target_blog_id,
-			$path,
-			$url,
-			$fixed_url
-		));
-	}
-	
-	unset($processing[$cache_key]);
 	return $fixed_url;
 }
-// TEMPORARILY DISABLED - causing redirect loops
-// add_filter('admin_url', __NAMESPACE__ . '\\fix_admin_url', 1, 3);
+// Priority 1 to run VERY early, before any other URL filters
+add_filter('admin_url', __NAMESPACE__ . '\\fix_admin_url', 1, 3);
 
 /**
  * Fix site_url to use nested paths
@@ -301,8 +260,8 @@ function fix_site_url($url, $path, $scheme, $blog_id) {
 	
 	return $fixed_url;
 }
-// TEMPORARILY DISABLED - causing issues
-// add_filter('site_url', __NAMESPACE__ . '\\fix_site_url', 20, 4);
+// Priority 20 to run after WordPress core
+add_filter('site_url', __NAMESPACE__ . '\\fix_site_url', 20, 4);
 
 /**
  * Fix home_url to use nested paths
@@ -344,25 +303,15 @@ function fix_home_url($url, $path, $scheme, $blog_id) {
 	
 	return $fixed_url;
 }
-// TEMPORARILY DISABLED - causing issues
-// add_filter('home_url', __NAMESPACE__ . '\\fix_home_url', 20, 4);
+// Priority 20 to run after WordPress core
+add_filter('home_url', __NAMESPACE__ . '\\fix_home_url', 20, 4);
 
 /**
  * Force correct blog context after site resolution.
  * This ensures we're in the right blog even if something switches it.
- * CRITICAL: Only run on frontend to prevent admin issues
+ * CRITICAL: Also runs on admin_init to ensure admin pages have correct context.
  */
 function force_correct_blog() {
-	// NEVER run in admin - causes critical errors
-	if (is_admin()) {
-		return;
-	}
-	
-	// NEVER run for network admin requests
-	if (is_network_admin()) {
-		return;
-	}
-	
 	if (!is_multisite() || !is_subdirectory_multisite()) {
 		return;
 	}
@@ -399,50 +348,16 @@ function force_correct_blog() {
 		}
 	}
 }
-// TEMPORARILY DISABLED - may be causing issues
-// add_action('template_redirect', __NAMESPACE__ . '\\force_correct_blog', 1);
-
-/**
- * Prevent redirect loops in admin by disabling canonical redirects for nested sites
- * CRITICAL: Only run for nested sites, never for root site
- * TEMPORARILY DISABLED - causing memory exhaustion
- */
-function prevent_admin_redirect_loop() {
-	// TEMPORARILY DISABLED - causing memory exhaustion
-	return;
-	
-	if (!is_admin() || !is_multisite() || !is_subdirectory_multisite()) {
-		return;
-	}
-	
-	$current_blog_id = get_current_blog_id();
-	// CRITICAL: Never run for root site - causes redirect loops
-	if ($current_blog_id <= 1) {
-		return;
-	}
-	
-	$network_id = get_current_network_id();
-	if (!Platform\nested_tree_enabled($network_id)) {
-		return;
-	}
-	
-	// Disable canonical redirects for nested site admin pages only
-	remove_action('template_redirect', 'redirect_canonical');
-}
-// TEMPORARILY DISABLED
-// add_action('admin_init', __NAMESPACE__ . '\\prevent_admin_redirect_loop', 0);
+// Run very early, before template loading
+add_action('template_redirect', __NAMESPACE__ . '\\force_correct_blog', 1);
+// ALSO run on admin_init to ensure admin pages have correct context
+add_action('admin_init', __NAMESPACE__ . '\\force_correct_blog', 1);
 
 /**
  * Fix front page detection for nested sites.
  * WordPress doesn't recognize nested paths as front pages, so we need to help it.
- * CRITICAL: Never run in admin to prevent critical errors
  */
 function fix_front_page_detection($query_vars) {
-	// NEVER run in admin - causes critical errors
-	if (is_admin()) {
-		return $query_vars;
-	}
-	
 	if (!is_multisite() || !is_subdirectory_multisite()) {
 		return $query_vars;
 	}
@@ -473,8 +388,7 @@ function fix_front_page_detection($query_vars) {
 	
 	return $query_vars;
 }
-// TEMPORARILY DISABLED
-// add_filter('request', __NAMESPACE__ . '\\fix_front_page_detection', 1);
+add_filter('request', __NAMESPACE__ . '\\fix_front_page_detection', 1);
 
 /**
  * Force front page query vars after parse_query.
@@ -523,8 +437,7 @@ function force_front_page_query($query) {
 		}
 	}
 }
-// TEMPORARILY DISABLED
-// add_action('parse_query', __NAMESPACE__ . '\\force_front_page_query', 20);
+add_action('parse_query', __NAMESPACE__ . '\\force_front_page_query', 20);
 
 /**
  * Force front-page.php template for nested site roots.
@@ -566,20 +479,13 @@ function force_front_page_template($template) {
 	
 	return $template;
 }
-// TEMPORARILY DISABLED
-// add_filter('template_include', __NAMESPACE__ . '\\force_front_page_template', 99);
+add_filter('template_include', __NAMESPACE__ . '\\force_front_page_template', 99);
 
 /**
  * Prevent 404 for nested site roots - run very early.
- * CRITICAL: Never run in admin to prevent critical errors
  */
 function prevent_404_for_nested_roots() {
-	// NEVER run in admin - causes critical errors
-	if (is_admin()) {
-		return;
-	}
-	
-	if (!is_multisite() || !is_subdirectory_multisite()) {
+	if (!is_multisite() || !is_subdirectory_multisite() || is_admin()) {
 		return;
 	}
 	
@@ -630,5 +536,4 @@ function prevent_404_for_nested_roots() {
 		remove_action('template_redirect', 'redirect_canonical');
 	}
 }
-// TEMPORARILY DISABLED
-// add_action('parse_request', __NAMESPACE__ . '\\prevent_404_for_nested_roots', 1);
+add_action('parse_request', __NAMESPACE__ . '\\prevent_404_for_nested_roots', 1);
