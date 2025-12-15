@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📋 Task List
+    url: https://github.com/YOUR_USERNAME/YOUR_REPO/blob/main/docs/GITHUB_TASKS.md
+    about: View the complete task list with priorities and semantic tags
+  - name: 📊 Project Status
+    url: https://github.com/YOUR_USERNAME/YOUR_REPO/blob/main/docs/PROJECT_STATUS.md
+    about: View current project status and completed features
+  - name: 📚 Documentation
+    url: https://github.com/YOUR_USERNAME/YOUR_REPO/tree/main/docs
+    about: Browse all documentation
+

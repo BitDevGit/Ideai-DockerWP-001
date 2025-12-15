@@ -123,6 +123,14 @@ Located in `wp-content/_usefultools/`:
 
 See `wp-content/_usefultools/README.md` for details.
 
+## Task Management
+
+**📋 Task List:** See `docs/GITHUB_TASKS.md` for comprehensive task list with priorities and semantic tags.
+
+**🐛 GitHub Issues:** Use `docs/GITHUB_ISSUES_TEMPLATE.md` to create GitHub issues from tasks.
+
+**📊 Project Status:** See `docs/PROJECT_STATUS.md` for current project status and completed features.
+
 ## Troubleshooting
 
 ```bash
