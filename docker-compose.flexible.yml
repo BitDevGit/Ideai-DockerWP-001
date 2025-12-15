@@ -38,7 +38,12 @@ services:
     image: wordpress:6.4-php8.2-fpm
     volumes:
       - wp1_data:/var/www/html
-      - ./wp-content:/var/www/html/wp-content
+      # Mount only code directories from repo (themes, plugins, mu-plugins, languages)
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./wp-content/languages:/var/www/html/wp-content/languages:ro
+      # Uploads in separate volume (not in repo)
       - wp1_uploads:/var/www/html/wp-content/uploads
     environment:
       WORDPRESS_DB_HOST: db1:3306
@@ -58,7 +63,12 @@ services:
     image: wordpress:6.4-php8.2-fpm
     volumes:
       - wp2_data:/var/www/html
-      - ./wp-content:/var/www/html/wp-content
+      # Mount only code directories from repo (themes, plugins, mu-plugins, languages)
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./wp-content/languages:/var/www/html/wp-content/languages:ro
+      # Uploads in separate volume (not in repo)
       - wp2_uploads:/var/www/html/wp-content/uploads
     environment:
       WORDPRESS_DB_HOST: db2:3306
@@ -78,7 +88,12 @@ services:
     image: wordpress:6.4-php8.2-fpm
     volumes:
       - wp3_data:/var/www/html
-      - ./wp-content:/var/www/html/wp-content
+      # Mount only code directories from repo (themes, plugins, mu-plugins, languages)
+      - ./wp-content/themes:/var/www/html/wp-content/themes:ro
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./wp-content/languages:/var/www/html/wp-content/languages:ro
+      # Uploads in separate volume (not in repo)
       - wp3_uploads:/var/www/html/wp-content/uploads
     environment:
       WORDPRESS_DB_HOST: db3:3306

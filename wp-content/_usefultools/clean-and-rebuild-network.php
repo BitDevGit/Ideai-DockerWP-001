@@ -85,6 +85,13 @@ for ($p = 1; $p <= 2; $p++) {
 	// Setup parent homepage
 	switch_to_blog($parent_blog_id);
 	update_option('blogname', $parent_name);
+	
+	// Ensure upload directory exists
+	$upload_dir = wp_upload_dir();
+	wp_mkdir_p($upload_dir['basedir']);
+	wp_mkdir_p($upload_dir['basedir'] . '/' . date('Y'));
+	wp_mkdir_p($upload_dir['basedir'] . '/' . date('Y') . '/' . date('m'));
+	
 	$homepage_id = wp_insert_post(array(
 		'post_title' => $parent_name . ' (Level 1)',
 		'post_content' => "<h1>{$parent_name}</h1><p>This is a Level 1 parent site.</p><p>Path: {$parent_path}</p>",

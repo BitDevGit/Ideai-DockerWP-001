@@ -209,4 +209,125 @@ function filter_network_home_url($url, $path, $scheme) {
 }
 add_filter('network_home_url', __NAMESPACE__ . '\\filter_network_home_url', 20, 3);
 
+/**
+ * Fix attachment URLs to use correct site-specific upload paths
+ */
+function fix_attachment_url($url, $post_id) {
+	if (!is_multisite() || !is_subdirectory_multisite()) {
+		return $url;
+	}
+	
+	$network_id = get_current_network_id();
+	if (!Platform\nested_tree_enabled($network_id)) {
+		return $url;
+	}
+	
+	// Get the blog ID for this attachment
+	$blog_id = get_current_blog_id();
+	if ($blog_id <= 1) {
+		return $url;
+	}
+	
+	// Check if URL is using root uploads instead of site-specific
+	$site_uploads_path = '/wp-content/uploads/sites/' . $blog_id;
+	$root_uploads_path = '/wp-content/uploads/';
+	
+	// If URL uses root uploads but should use site-specific, fix it
+	if (strpos($url, $root_uploads_path) !== false && strpos($url, '/sites/') === false) {
+		// Replace root uploads path with site-specific path
+		$url = str_replace($root_uploads_path, $site_uploads_path . '/', $url);
+		// Fix double slashes
+		$url = str_replace($site_uploads_path . '//', $site_uploads_path . '/', $url);
+	}
+	
+	return $url;
+}
+// Use high priority to ensure it runs - also hook into admin area
+add_filter('wp_get_attachment_url', __NAMESPACE__ . '\\fix_attachment_url', 999, 2);
+add_filter('attachment_link', __NAMESPACE__ . '\\fix_attachment_url', 999, 2);
+add_filter('wp_get_attachment_image_src', function($image, $attachment_id, $size, $icon) {
+	if ($image && isset($image[0])) {
+		$image[0] = fix_attachment_url($image[0], $attachment_id);
+	}
+	return $image;
+}, 999, 4);
+// Also fix URLs in admin AJAX responses
+add_filter('wp_prepare_attachment_for_js', function($response, $attachment, $meta) {
+	if (isset($response['url'])) {
+		$response['url'] = fix_attachment_url($response['url'], $attachment->ID);
+	}
+	if (isset($response['sizes']) && is_array($response['sizes'])) {
+		foreach ($response['sizes'] as $size => $size_data) {
+			if (isset($size_data['url'])) {
+				$response['sizes'][$size]['url'] = fix_attachment_url($size_data['url'], $attachment->ID);
+			}
+		}
+	}
+	return $response;
+}, 999, 3);
+
+/**
+ * Fix all upload URLs in content (for images, etc.)
+ */
+function fix_upload_urls_in_content($content) {
+	if (!is_multisite() || !is_subdirectory_multisite()) {
+		return $content;
+	}
+	
+	$network_id = get_current_network_id();
+	if (!Platform\nested_tree_enabled($network_id)) {
+		return $content;
+	}
+	
+	$blog_id = get_current_blog_id();
+	if ($blog_id <= 1) {
+		return $content;
+	}
+	
+	// Replace root uploads URLs with site-specific URLs
+	$root_pattern = '/(["\'])(\/wp-content\/uploads\/)(?!sites\/)([^"\']+)(["\'])/i';
+	$site_path = '/wp-content/uploads/sites/' . $blog_id . '/';
+	$content = preg_replace($root_pattern, '$1' . $site_path . '$3$4', $content);
+	
+	return $content;
+}
+add_filter('the_content', __NAMESPACE__ . '\\fix_upload_urls_in_content', 999);
+add_filter('widget_text', __NAMESPACE__ . '\\fix_upload_urls_in_content', 999);
+
+/**
+ * Fix attachment metadata URLs (for thumbnails, etc.)
+ */
+function fix_attachment_metadata($metadata, $attachment_id) {
+	if (!is_multisite() || !is_subdirectory_multisite()) {
+		return $metadata;
+	}
+	
+	$network_id = get_current_network_id();
+	if (!Platform\nested_tree_enabled($network_id)) {
+		return $metadata;
+	}
+	
+	$blog_id = get_current_blog_id();
+	if ($blog_id <= 1 || !is_array($metadata)) {
+		return $metadata;
+	}
+	
+	// Fix file path in metadata
+	if (isset($metadata['file']) && strpos($metadata['file'], 'sites/') === false) {
+		$metadata['file'] = 'sites/' . $blog_id . '/' . $metadata['file'];
+	}
+	
+	// Fix thumbnail URLs
+	if (isset($metadata['sizes']) && is_array($metadata['sizes'])) {
+		foreach ($metadata['sizes'] as $size => $size_data) {
+			if (isset($size_data['file'])) {
+				// The file path is relative, so we don't need to change it
+				// But we ensure the base path is correct
+			}
+		}
+	}
+	
+	return $metadata;
+}
+add_filter('wp_get_attachment_metadata', __NAMESPACE__ . '\\fix_attachment_metadata', 999, 2);
 
