@@ -30,9 +30,10 @@ function flag_defaults() {
 }
 
 require_once __DIR__ . '/includes/nested-tree.php';
-require_once __DIR__ . '/includes/nested-tree-routing.php';
-require_once __DIR__ . '/includes/nested-tree-urls.php';
-require_once __DIR__ . '/includes/nested-tree-canonical.php';
+// TEMPORARILY DISABLED - causing redirect loops
+// require_once __DIR__ . '/includes/nested-tree-routing.php';
+// require_once __DIR__ . '/includes/nested-tree-urls.php';
+// require_once __DIR__ . '/includes/nested-tree-canonical.php';
 require_once __DIR__ . '/includes/nested-tree-collisions.php';
 require_once __DIR__ . '/includes/nested-tree-homepage.php';
 require_once __DIR__ . '/includes/admin-ui.php';
