@@ -57,3 +57,4 @@ When migrating from the old setup (where uploads were in the repo):
 2. Existing uploads in `./wp-content/uploads/` should be migrated to volumes
 3. The `./wp-content/uploads/` directory in the repo is now ignored by git
 
+

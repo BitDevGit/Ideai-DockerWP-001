@@ -39,3 +39,4 @@ echo "⚠️  Note: This script creates the site but path update should be done 
 echo "   Use the WordPress admin UI or a PHP script to set the nested path"
 
 
+

@@ -127,6 +127,7 @@ function allow_iframe_embedding() {
 }
 add_action('init', __NAMESPACE__ . '\\allow_iframe_embedding', 1);
 
+
 /**
  * Fix admin URLs to use nested paths instead of wp_blogs.path
  * This ensures wp-admin URLs match the nested site structure
@@ -156,9 +157,14 @@ function fix_admin_url($url, $path, $blog_id) {
 	// Otherwise, WordPress used get_current_blog_id() when generating the URL
 	$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
 	
-	// Only fix URLs for nested sites
+	// SKIP root site (blog_id 1) - let WordPress handle it normally
+	if ($target_blog_id === 1) {
+		return $url;
+	}
+	
+	// Only fix URLs for nested sites (not root)
 	$nested_path = NestedTree\get_blog_path($target_blog_id, $network_id);
-	if (!$nested_path) {
+	if (!$nested_path || $nested_path === '/') {
 		return $url;
 	}
 	
@@ -237,9 +243,14 @@ function fix_site_url($url, $path, $scheme, $blog_id) {
 	// CRITICAL: Use the provided blog_id, not current blog
 	$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
 	
-	// Only fix URLs for nested sites
+	// SKIP root site (blog_id 1) - let WordPress handle it normally
+	if ($target_blog_id === 1) {
+		return $url;
+	}
+	
+	// Only fix URLs for nested sites (not root)
 	$nested_path = NestedTree\get_blog_path($target_blog_id, $network_id);
-	if (!$nested_path) {
+	if (!$nested_path || $nested_path === '/') {
 		return $url;
 	}
 	
@@ -280,9 +291,14 @@ function fix_home_url($url, $path, $scheme, $blog_id) {
 	// CRITICAL: Use the provided blog_id, not current blog
 	$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
 	
-	// Only fix URLs for nested sites
+	// SKIP root site (blog_id 1) - let WordPress handle it normally
+	if ($target_blog_id === 1) {
+		return $url;
+	}
+	
+	// Only fix URLs for nested sites (not root)
 	$nested_path = NestedTree\get_blog_path($target_blog_id, $network_id);
-	if (!$nested_path) {
+	if (!$nested_path || $nested_path === '/') {
 		return $url;
 	}
 	
@@ -325,6 +341,12 @@ function force_correct_blog() {
 	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 	$parsed = parse_url($request_uri);
 	$path = $parsed['path'] ?? '/';
+	
+	// Skip admin paths - they should use the current blog context
+	if (strpos($path, '/wp-admin') === 0 || strpos($path, '/wp-login') === 0) {
+		return;
+	}
+	
 	$normalized = NestedTree\normalize_path($path);
 	
 	// Resolve using nested table

@@ -72,3 +72,4 @@ if ($fixed > 0) {
     echo "\n✅ All site URLs should now use correct nested paths!\n";
 }
 
+

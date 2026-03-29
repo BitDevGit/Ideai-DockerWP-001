@@ -28,3 +28,4 @@ echo "Or check database directly:"
 echo "docker-compose -f docker-compose.flexible.yml exec db3 mysql -u wordpress -pwordpress wordpress3 -e \"SELECT blog_id, domain, path FROM wp_blogs WHERE path LIKE '%/%' ORDER BY blog_id;\""
 
 
+

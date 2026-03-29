@@ -95,6 +95,8 @@ services:
       - ./wp-content/languages:/var/www/html/wp-content/languages:ro
       # Uploads in separate volume (not in repo)
       - wp3_uploads:/var/www/html/wp-content/uploads
+      # Mount tests directory for test scripts
+      - ./tests:/var/www/html/tests:ro
     environment:
       WORDPRESS_DB_HOST: db3:3306
       WORDPRESS_DB_USER: ${DB3_USER:-wordpress3}

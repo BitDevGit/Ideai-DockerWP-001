@@ -81,6 +81,11 @@ function maybe_rewrite_for_blog($url, $blog_id) {
 		return $url;
 	}
 
+	// SKIP root site (blog_id 1) - let WordPress handle it normally
+	if ($blog_id === 1) {
+		return $url;
+	}
+
 	$mapped = NestedTree\get_blog_path($blog_id, $network_id);
 	if (!$mapped || $mapped === '/') {
 		return $url;
@@ -173,11 +178,16 @@ add_filter('site_url', __NAMESPACE__ . '\\filter_site_url', 20, 4);
 // NOTE: This runs AFTER nested-tree-routing.php's fix_admin_url (priority 1)
 // So we only need to handle edge cases that the primary filter missed
 function filter_admin_url($url, $path, $blog_id) {
+	// SKIP root site (blog_id 1) - let WordPress handle it normally
+	$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
+	if ($target_blog_id === 1) {
+		return $url;
+	}
+	
 	// Check if URL was already fixed by nested-tree-routing.php
 	// If it contains a nested path, skip rewriting
 	$network_id = get_current_network_id();
 	if (Platform\nested_tree_enabled($network_id)) {
-		$target_blog_id = $blog_id ? (int) $blog_id : get_current_blog_id();
 		$nested_path = NestedTree\get_blog_path($target_blog_id, $network_id);
 		if ($nested_path && strpos($url, $nested_path) !== false) {
 			// Already fixed by primary filter

@@ -1,0 +1,65 @@
+# Vanilla WordPress Multisite Test Environment
+# Used to test if wp-admin redirect issues are from core WordPress or our nested tree code
+
+services:
+  nginx-vanilla:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/vanilla-test.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - wp_vanilla_data:/var/www/html:ro
+    depends_on:
+      - wordpress-vanilla
+    restart: unless-stopped
+    networks:
+      - vanilla-network
+
+  wordpress-vanilla:
+    image: wordpress:6.4-php8.2-fpm
+    volumes:
+      - wp_vanilla_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db-vanilla:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress_password
+      WORDPRESS_DB_NAME: wordpress_vanilla
+    depends_on:
+      db-vanilla:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - vanilla-network
+
+  db-vanilla:
+    image: mariadb:10.11
+    volumes:
+      - db_vanilla_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: wordpress_vanilla
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress_password
+    command: --default-authentication-plugin=mysql_native_password --innodb-buffer-pool-size=64M --max-connections=100
+    restart: unless-stopped
+    networks:
+      - vanilla-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  wp_vanilla_data:
+    driver: local
+  db_vanilla_data:
+    driver: local
+
+networks:
+  vanilla-network:
+    driver: bridge
+

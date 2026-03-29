@@ -21,7 +21,7 @@ global $wpdb;
 $sites = $wpdb->get_results("
 	SELECT b.blog_id, b.domain, b.path, n.path as nested_path
 	FROM {$wpdb->blogs} b
-	LEFT JOIN {$wpdb->prefix}ideai_nested_tree_paths n ON b.blog_id = n.blog_id AND n.network_id = 1
+	LEFT JOIN {$wpdb->base_prefix}ideai_nested_sites n ON b.blog_id = n.blog_id AND n.network_id = 1
 	WHERE b.site_id = 1 AND b.blog_id > 1
 	ORDER BY b.blog_id
 ");
@@ -94,5 +94,6 @@ echo str_repeat("=", 60) . "\n";
 echo "Results: {$passed} passed, {$failed} failed\n";
 
 exit($failed > 0 ? 1 : 0);
+
 
 

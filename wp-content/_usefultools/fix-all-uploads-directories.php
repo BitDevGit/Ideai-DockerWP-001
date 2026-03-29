@@ -87,3 +87,4 @@ echo "\n✅ Upload directories fixed!\n";
 echo "  - Fixed: {$fixed} directories\n";
 echo "  - Already existed: {$skipped} sites\n";
 
+

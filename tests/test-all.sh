@@ -10,34 +10,34 @@ echo ""
 
 # Test 1: Check database paths
 echo "Test 1: Checking database paths..."
-docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp db query \
+docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp --allow-root db query \
   "SELECT blog_id, domain, path FROM wp_blogs WHERE site_id = 1 ORDER BY blog_id" \
   2>&1 | grep -v "Warning" || true
 echo ""
 
 # Test 2: Check nested tree mappings
 echo "Test 2: Checking nested tree mappings..."
-docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp db query \
-  "SELECT blog_id, path, network_id FROM wp_ideai_nested_tree_paths ORDER BY blog_id" \
+docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp --allow-root db query \
+  "SELECT blog_id, path, network_id FROM wp_ideai_nested_sites ORDER BY blog_id" \
   2>&1 | grep -v "Warning" || true
 echo ""
 
 # Test 3: Check for -- in paths (should be none)
 echo "Test 3: Checking for -- in paths (should find none)..."
-DASH_COUNT=$(docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp db query \
+DASH_COUNT=$(docker-compose -f docker-compose.flexible.yml exec -T wordpress3 wp --allow-root db query \
   "SELECT COUNT(*) FROM wp_blogs WHERE path LIKE '%--%'" \
-  --skip-column-names 2>&1 | tail -1 | tr -d ' ')
+  --skip-column-names 2>&1 | grep -E '^[0-9]+$' | tail -1 | tr -d ' ' || echo "0")
 
-if [ "$DASH_COUNT" = "0" ]; then
+if [ "$DASH_COUNT" = "0" ] || [ -z "$DASH_COUNT" ]; then
   echo "✅ No -- found in paths"
 else
-  echo "❌ Found {$DASH_COUNT} paths with --"
+  echo "❌ Found $DASH_COUNT paths with --"
 fi
 echo ""
 
 # Test 4: PHP URL generation test
 echo "Test 4: Testing URL generation..."
-docker-compose -f docker-compose.flexible.yml exec -T wordpress3 php tests/test-nested-urls.php 2>&1 || true
+docker-compose -f docker-compose.flexible.yml exec -T wordpress3 bash -c "cd /var/www/html && php tests/test-nested-urls.php" 2>&1 || true
 echo ""
 
 # Test 5: HTTP accessibility test
@@ -51,5 +51,6 @@ fi
 
 echo ""
 echo "✅ All tests complete!"
+
 
 

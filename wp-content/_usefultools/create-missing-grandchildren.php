@@ -165,3 +165,4 @@ foreach ([1, 2, 3] as $parent_num) {
 
 echo "\n" . ($all_ok ? "✅ All children have exactly 3 grandchildren!" : "❌ Some children are missing grandchildren") . "\n";
 
+

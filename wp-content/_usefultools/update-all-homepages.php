@@ -44,3 +44,4 @@ foreach ($sites as $site) {
 echo "\n✅ Updated {$updated} homepages!\n";
 
 
+
